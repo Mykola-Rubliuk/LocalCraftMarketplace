@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="0d4081be-66c1-4c74-adf5-fd4409b76e56" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/ca1-analysis/report/Analysys_Dossier.md" beforeDir="false" afterPath="$PROJECT_DIR$/ca1-analysis/report/Analysys_Dossier.md" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="UML Sequence" />
+        <option value="UML Use Case" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/ca1-analysis" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;Mykola-Rubliuk&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/Mykola-Rubliuk/LocalCraftMarketplace.git&quot;,
+    &quot;accountId&quot;: &quot;7ae55c9f-fbb6-4521-9cf2-5dca38e2c043&quot;
+  }
+}</component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="NextEditCompletionFeaturesState">
+    <decayedCancelled>
+      <entry key="MS100" value="1.0361757801647442" />
+      <entry key="MS500" value="1.6387346330592854" />
+      <entry key="S2" value="2.4404072216122943" />
+      <entry key="S5" value="2.747330276487779" />
+      <entry key="S10" value="2.8682190994349837" />
+      <entry key="S30" value="2.954796197722544" />
+      <entry key="S60" value="2.9772341342829725" />
+      <entry key="M2" value="2.988575741363711" />
+      <entry key="M5" value="2.9957617945410093" />
+      <entry key="M10" value="3.07169144628934" />
+      <entry key="M15" value="3.463365834910432" />
+      <entry key="M30" value="6.002090216202061" />
+      <entry key="H1" value="10.718212870760818" />
+      <entry key="H2" value="15.411733110562691" />
+      <entry key="H4" value="18.751416428932927" />
+      <entry key="D1" value="22.218935415539146" />
+      <entry key="W1" value="22.88648780233422" />
+    </decayedCancelled>
+    <decayedSelected>
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="0.0" />
+      <entry key="S2" value="0.0" />
+      <entry key="S5" value="0.0" />
+      <entry key="S10" value="0.0" />
+      <entry key="S30" value="0.0" />
+      <entry key="S60" value="0.0" />
+      <entry key="M2" value="0.0" />
+      <entry key="M5" value="0.0" />
+      <entry key="M10" value="0.0" />
+      <entry key="M15" value="0.0" />
+      <entry key="M30" value="0.0" />
+      <entry key="H1" value="0.0" />
+      <entry key="H2" value="0.0" />
+      <entry key="H4" value="0.0" />
+      <entry key="D1" value="0.0" />
+      <entry key="W1" value="0.0" />
+    </decayedSelected>
+    <decayedShown>
+      <entry key="MS100" value="0.9594175488698139" />
+      <entry key="MS500" value="1.610651632895635" />
+      <entry key="S2" value="2.4288121635162256" />
+      <entry key="S5" value="2.741969527006394" />
+      <entry key="S10" value="2.865395377439202" />
+      <entry key="S30" value="2.9538206368461633" />
+      <entry key="S60" value="2.9767419001567585" />
+      <entry key="M2" value="2.988328498226575" />
+      <entry key="M5" value="2.995662612525479" />
+      <entry key="M10" value="3.0716399418072537" />
+      <entry key="M15" value="3.4633237293010786" />
+      <entry key="M30" value="6.002039783346333" />
+      <entry key="H1" value="10.718157438150419" />
+      <entry key="H2" value="15.411689497340127" />
+      <entry key="H4" value="18.751388799908693" />
+      <entry key="D1" value="22.218929784492975" />
+      <entry key="W1" value="22.88648696940537" />
+    </decayedShown>
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 7,
+  &quot;fromUser&quot;: false
+}</component>
+  <component name="ProjectId" id="3KvXSNiZLMhFvOwwDw6L3UHqAGJ" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "DefaultPlantUmlFileTemplate": "UML Use Case",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "main",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/rubly/OneDrive - Munster Technological University/Year 3/LocalCraftMarketplace/ca1-analysis/report",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.jshint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.jshint": "",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "onboarding.tips.debug.path": "C:/Users/rubly/OneDrive - Munster Technological University/Year 3/LocalCraftMarketplace/src/Main.java",
+    "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\rubly\OneDrive - Munster Technological University\Year 3\LocalCraftMarketplace\ca1-analysis\report" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\rubly\OneDrive - Munster Technological University\Year 3\LocalCraftMarketplace\ca1-analysis\report" />
+    </key>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-30f59d01ecdd-a203e0a19954-intellij.indexing.shared.core-IU-262.10968.63" />
+        <option value="bundled-js-predefined-d6986cc7102b-4abd2a77f808-JavaScript-IU-262.10968.63" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="0d4081be-66c1-4c74-adf5-fd4409b76e56" name="Changes" comment="" />
+      <created>1792439017403</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1792439017403</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <ignored-roots>
+      <path value="$PROJECT_DIR$" />
+    </ignored-roots>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/Main.java</url>
+          <line>11</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+</project>
