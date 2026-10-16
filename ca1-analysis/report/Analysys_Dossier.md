@@ -108,6 +108,50 @@ and full accounting. Proposed policies are maintained in the uncertainty registe
 | Maker | Proposed primary actor (assumption A-09) | Maintain own product records and provide input on commission feasibility | UC-05, UC-08 |
 | Customer | Offstage stakeholder | Request items and approve changes | Indirectly influences UC-02/UC-04/UC-05 |
 
-Actor assignments are proposed. 
-Maker access is an explicit project assumption (A-09), not a confirmed scenario fact.
 Customer remains offstage and has no direct system access in this scope.
+
+## 4. Requirements Catalogue and MoSCoW
+
+MoSCoW means **Must** (essential for the initial system), 
+**Should** (important but a manual workaround exists), 
+**Could** (desirable), 
+and **Won't** (excluded from this release). 
+
+Priorities below are proposed and require manager validation. 
+
+### 4.1 Functional requirements
+
+| ID | Atomic requirement | Source and rationale | MoSCoW | Verification | Links |
+|---|---|---|---|---|---|
+| FR-01 | The system shall record a product's maker, description and selling price. | E: product records include maker and price; consistent attribution | Must | Create/read record with those fields | P-02; UC-08; Product |
+| FR-02 | The system shall record an identified stock item's current stock location. | E: stock is held at different locations | Must | Record and retrieve location | P-01; UC-03; StockItem |
+| FR-03 | The system shall record a stock movement with item, origin, destination and event date. | E: stock moves without shop records changing | Must | Inspect recorded transfer history | P-01; UC-03; StockMovement |
+| FR-04 | The system shall indicate whether a selected item is available for commitment, based on recorded sales and active reservations. | E: available counts include sold/reserved items | Must | Test sold, reserved and available examples | P-01/P-03; UC-02; StockItem |
+| FR-05 | The system shall record a reservation linking an item to a customer and its agreed conditions. | E: reservations vary and may await payment | Must | Create and retrieve reservation | P-03; UC-02; Reservation |
+| FR-06 | The system shall record customer orders containing one or more order lines. | E: mixed-maker orders | Must | Save order with two maker-linked lines | P-04; UC-04; Order/OrderLine |
+| FR-07 | The system shall record a fulfilment status for each order line independently. | E: partial collection, waiting, substitutions | Must | Update one line without changing another | P-04; UC-04; OrderLine |
+| FR-08 | The system shall record agreed commission specifications and their proposed changes. | E: materials, dimensions, price and dates may change | Should | Record original terms and a proposed change | P-05; UC-05; Commission |
+| FR-09 | The system shall record a return, exchange or repair case and its outcome. | E: after-sales outcomes inconsistently recorded | Should | Open, update and retrieve a case | P-06; UC-06/UC-09; ReturnCase |
+| FR-10 | The system shall retain sale transaction evidence identifying the maker and monetary adjustments associated with each sold item. | E: maker payments affected by discounts, deposits, refunds | Must | Reconcile sample item with adjustment records | P-07; UC-01/UC-07; SaleLine |
+| FR-11 | The system shall restrict volunteer access to confidential maker payment information. | E: volunteer should sell without seeing all payment details | Must | Authorisation test with volunteer account | P-08; UC-07; UserRole |
+| FR-12 | The system shall produce an operational view of incomplete orders, reservations and commissions for authorised staff. | E: manager needs these summaries | Should | Verify each open record appears | P-04/P-05; UC-07; Order/Reservation/Commission |
+
+### 4.2 Measurable non-functional requirements
+
+These are **proposed acceptance targets**. Confirm thresholds and test conditions before implementation.
+
+| ID | Quality | Measurable proposed requirement | Priority | Verification and source |
+|---|---|---|---|---|
+| NFR-01 | Security | Shop Volunteers shall not be able to view confidential maker-payment records. | Must | Test access using a Volunteer account; E: volunteer privacy concern |
+| NFR-02 | Performance | The system shall display recorded stock availability within 3 seconds under normal operating conditions. | Should | Measure response time during stock-availability checks; D: proposed target |
+| NFR-03 | Data integrity | The system shall retain confirmed stock movements and their history after the application is closed and reopened. | Must | Record stock movements, restart the application and verify the records; E: inconsistent records |
+| NFR-04 | Usability | A trained Shop Volunteer shall be able to record a standard customer sale using the system without assistance. | Should | Observe a trained volunteer completing a standard sale; D: proposed usability target |
+| NFR-05 | Connectivity resilience | The system or an approved offline procedure shall allow market transactions to be recorded during an internet outage and reconciled when connectivity returns, without unaccounted transactions. | Must | Simulate an outage and verify that recorded transactions can be reconciled; E: unreliable internet; implementation open Q-08 |
+
+### 4.3 Priority rationale and exclusions
+
+Accurate stock, order-line state, sales evidence and volunteer confidentiality are Must because their absence preserves the core problems. 
+Commission change history, return outcomes and operational summaries are Should because controlled manual processes might temporarily support them. 
+Automatic promotional recommendations could be Could but are not proposed as a formal requirement because the scenario does not support them. 
+Public e-commerce, online payment processing and full accounting are Won't for this release.
+
