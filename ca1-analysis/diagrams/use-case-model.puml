@@ -1,0 +1,36 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Shop Volunteer" as Volunteer
+actor "Market Coordinator" as Coordinator
+actor "Manager" as Manager
+actor "Maker" as Maker
+
+rectangle "Local Craft Marketplace System" {
+    usecase "UC-01\nProcess Customer Sale" as UC01
+    usecase "UC-02\nManage Reservation" as UC02
+    usecase "UC-03\nRecord Stock Movement" as UC03
+    usecase "UC-04\nManage Customer Order" as UC04
+    usecase "UC-05\nEvaluate Commission Change" as UC05
+    usecase "UC-06\nRegister Return Request" as UC06
+    usecase "UC-07\nReview Operations and Maker Evidence" as UC07
+    usecase "UC-08\nMaintain Own Product Records" as UC08
+    usecase "UC-09\nReview Return Case" as UC09
+}
+
+Volunteer -- UC01
+Volunteer -- UC02
+Volunteer -- UC04
+Volunteer -- UC06
+
+Coordinator -- UC03
+
+Maker -- UC05
+Maker -- UC08
+
+Manager -- UC05
+Manager -- UC07
+Manager -- UC09
+
+@enduml

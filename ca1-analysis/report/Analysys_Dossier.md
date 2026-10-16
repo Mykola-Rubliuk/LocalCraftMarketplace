@@ -155,3 +155,117 @@ Commission change history, return outcomes and operational summaries are Should 
 Automatic promotional recommendations could be Could but are not proposed as a formal requirement because the scenario does not support them. 
 Public e-commerce, online payment processing and full accounting are Won't for this release.
 
+## 5. Business Rules and Uncertainty Register
+
+### 5.1 Evidence-supported business rules / policy constraints
+
+These are business-level obligations strongly supported by the scenario, not newly invented durations or financial formulas.
+
+| ID | Rule | Evidence / qualification | Related requirements |
+|---|---|---|---|
+| BR-01 | Every sold item must be attributed to its maker for transaction evidence. | E: staff must verify maker attribution; sales needed for maker payments | [FR-01, FR-10](#41-Functional-requirements) |
+| BR-02 | A customer order may include items supplied by more than one maker. | E: explicit scenario fact; structural rule | [FR-06, FR-07](#41-Functional-requirements) |
+| BR-03 | Item-level readiness must be distinguishable within an order. | E: customer wants to know which parts are ready or being made | [FR-07](#41-Functional-requirements) |
+| BR-04 | Volunteers must not have access to all confidential maker payment details. | E: direct volunteer statement | [FR-11, NFR-01](#41-Functional-requirements) |
+| BR-05 | The system must not perform public e-commerce, online payment processing or full accounting in the initial scope. | E: explicit scope exclusion; scope constraint rather than operational policy | [Scope 2.3](#23-Out-of-scope) |
+
+### 5.2 Proposed assumptions
+
+| ID | Proposed assumption | Why it is useful | Confirmation |
+|---|---|---|---|
+| A-01 | An unpaid reservation expires after three working days. | Gives a testable provisional expiry example | Q-01, Manager |
+| A-02 | A deposited reservation may have a separately agreed expiry date. | Avoids treating deposits as identical to unpaid holds | Q-01/Q-06, Manager |
+| A-03 | Every one-off physical piece receives a distinct item ID; interchangeable standard stock can share a product type. | Avoids confusing distinct finishes | Q-02, Manager and Maker |
+| A-04 | A customer must approve a substitution or cancellation affecting their order. | Preserves customer choice | Q-03, Manager |
+| A-05 | A material, price or target-date change to a commission requires recorded customer approval. | Provides change evidence | Q-04, Manager and Maker |
+| A-06 | Return outcomes are recorded, but eligibility for a refund is decided under an approved policy and applicable law. | Avoids inventing return rights | Q-05, Manager |
+| A-07 | Manager may view payment summaries; volunteers may record sales but cannot view confidential maker-payment totals. | Proposed permission interpretation | Q-07, Manager |
+| A-08 | Event transactions are captured offline and reconciled by an authorised coordinator when connectivity returns. | Addresses market outage | Q-08, Coordinator |
+| A-09 | Makers can access the internal system to maintain only their own product records; they cannot edit other Makers' records or access confidential maker-payment summaries. | Gives Makers responsibility for keeping their own product details accurate while preserving access restrictions | Q-07, Manager and Makers |
+
+### 5.3 Constraints
+
+| ID | Constraint | Evidence |
+|---|---|---|
+| C-01 | Internet connectivity can be unreliable at seasonal markets. | E |
+| C-02 | No public e-commerce, online payment processing or full accounting in initial scope. | E |
+| C-03 | Confidential maker payment information must be restricted from volunteers. | E |
+| C-04 | Product and stock information must cover multiple makers, item types and locations. | E |
+
+### 5.4 Risk register
+
+| ID | Risk | Likelihood / proposed | Question |
+|---|---|---|---|
+| R-01 | Incorrect availability causes double commitment. | High / High | Stock movement evidence and availability rules; Q-02 |
+| R-02 | Unclear expiry leaves stock reserved too long. | Medium / Medium | Confirm reservation policy; Q-01 |
+| R-03 | Unique items are merged incorrectly. | Medium / High | Define item identification; Q-02 |
+| R-04 | Partial order decisions are disputed. | Medium / High | Record line-level decision and approval; Q-03 |
+| R-05 | Commission change is made without approval. | Medium / High | Preserve proposed and approved terms; Q-04 |
+| R-06 | Maker reconciliation omits refund or discount. | Medium / High | Transaction adjustments and review; Q-06 |
+| R-07 | Volunteer sees restricted maker payments. | Medium / High | Permissions and authorisation tests; Q-07 |
+| R-08 | Offline records conflict when uploaded. | High / Medium | Event reconciliation process; Q-08 |
+
+### 5.5 Clarification questions
+
+| ID | Question | Ask | Affects |
+|---|---|---|---|
+| Q-01 | How long do unpaid and deposited reservations last, and who can extend them? | Manager | FR-05, UC-02, A-01/A-02 |
+| Q-02 | Which products require individual item IDs rather than shared quantities? | Manager, Maker | FR-01–FR-04, A-03 |
+| Q-03 | Who approves substitutions, partial collection and cancellation, and how is approval evidenced? | Manager, Customer representatives | FR-07, UC-04, A-04 |
+| Q-04 | Which commission changes require customer and maker approval? | Manager, Maker | FR-08, UC-05, A-05 |
+| Q-05 | What return, exchange, repair and refund rules apply to standard, damaged and personalised items? | Manager, legal adviser | FR-09, UC-06, A-06 |
+| Q-06 | How are cooperative fees, deposits, discounts and refunds calculated and allocated to makers? | Manager, finance support | FR-10, A-02 |
+| Q-07 | What can each role see or change, and should Makers have access to maintain only their own product records? | Manager, Makers | FR-01, FR-11, NFR-01, A-07/A-09 |
+| Q-08 | What offline procedure, reconciliation authority and conflict handling are required at markets? | Market Coordinator, Manager | NFR-05, A-08 |
+
+## 6. Use-case Model
+
+The use-case diagram is provided in a separate PlantUML file: ``diagrams/use-case-model.puml``.
+
+### 6.1 Catalogue
+
+| ID | Actor goal / use case | Primary actor | Related FR |
+|---|---|---|---|
+| UC-01 | Process Customer Sale | Shop Volunteer; Market Coordinator when processing an event sale | FR-04, FR-10 |
+| UC-02 | Manage Reservation | Shop Volunteer | FR-04, FR-05 |
+| UC-03 | Record Stock Movement | Market Coordinator | FR-02, FR-03 |
+| UC-04 | Manage Customer Order | Shop Volunteer | FR-06, FR-07 |
+| UC-05 | Evaluate Commission Change | Maker and Manager | FR-08 |
+| UC-06 | Register Return Request | Shop Volunteer | FR-09 |
+| UC-07 | Review Marketplace Operations and Maker Evidence | Manager | FR-10, FR-11, FR-12 |
+| UC-08 | Maintain Own Product Records | Maker (proposed access assumption A-09) | FR-01 |
+| UC-09 | Review Return Case | Manager | FR-09 |
+
+### 6.2 Detailed use case: UC-02 Manage Reservation
+
+|Field | Value |
+| --- | --- |
+| **Primary actor:** | Shop Volunteer. |
+|**Goal:** | Record a valid hold on an identified item.| 
+|**Trigger:** | A customer asks the volunteer to reserve an item. |
+|**Preconditions:** | Volunteer is authorised; the item has a record; availability information can be checked. |
+|**Success postconditions:** | Reservation and agreed terms are recorded, and the item is no longer represented as freely available.|
+|**Failure postconditions:** | No new confirmed reservation exists; any unresolved availability remains flagged for follow-up.|
+
+**Main success flow:**
+
+1. Customer asks the volunteer to reserve a particular item.
+2. Volunteer identifies the item and requests its availability.
+3. System reports that the item is available for reservation.
+4. Volunteer confirms customer identity/contact and agreed reservation conditions.
+5. Volunteer requests reservation recording.
+6. System records the customer, item, date and agreed conditions.
+7. System marks the item as reserved and confirms the recorded outcome.
+8. Volunteer communicates the agreed conditions to the customer.
+
+**A1 — Item already committed (from step 3):** System reports sold or actively reserved status. No reservation is confirmed. Volunteer informs customer and may discuss an alternative item outside this use case.
+
+**A2 — Deposit condition (from step 4):** If a deposit has been accepted by an authorised external payment process, volunteer records evidence of the deposit and the separately agreed hold conditions. The system does **not** process the payment.
+
+**A3 — Requested extension (from step 4):** If the customer requests a non-standard hold period, the volunteer seeks the authority required by the policy; the period is not treated as approved automatically. The policy remains Q-01.
+
+**E1 — Uncertain availability (from step 3):** If conflicting stock records prevent confirmation, the system does not create a confirmed reservation. Staff initiate a stock check.
+
+**E2 — Incomplete customer/condition information (from step 6):** System rejects confirmation and identifies missing required reservation details. The volunteer may correct the information and retry.
+
+**Business rules / assumptions:** BR-04; A-01 and A-02 remain proposed.
