@@ -1,0 +1,93 @@
+@startuml
+hide methods
+
+class Maker {
+  makerCode
+  displayName
+  contactDetails
+}
+class Product {
+  productCode
+  description
+  materials
+  basePrice
+  careInformation
+}
+class StockItem {
+  itemCode
+  finish
+  availabilityStatus
+}
+class Location {
+  locationName
+  locationType
+}
+class StockMovement {
+  movementDate
+  movementReason
+}
+class Customer {
+  customerReference
+  contactDetails
+}
+class CustomerOrder {
+  orderReference
+  orderDate
+  orderStatus
+}
+class OrderLine {
+  quantity
+  agreedPrice
+  fulfilmentStatus
+}
+class Reservation {
+  reservationDate
+  agreedExpiry
+  reservationStatus
+}
+class Commission {
+  specifications
+  targetDate
+  agreedPrice
+  approvalStatus
+}
+class ReturnCase {
+  caseDate
+  reason
+  outcome
+}
+class Volunteer {
+  volunteerId
+  displayName
+}
+class Sale {
+  saleReference
+  saleDate
+  saleStatus
+}
+class SaleLine {
+  soldPrice
+  quantity
+  discountAmount
+  refundAmount
+}
+
+Maker "1" -- "0..*" Product : supplies
+Product "1" -- "0..*" StockItem : describes
+Location "1" -- "0..*" StockItem : currently holds
+StockItem "1" -- "0..*" StockMovement : movement history
+Location "1" -- "0..*" StockMovement : origin
+Location "1" -- "0..*" StockMovement : destination
+Customer "1" -- "0..*" CustomerOrder : places
+CustomerOrder "1" -- "1..*" OrderLine : contains
+Product "1" -- "0..*" OrderLine : ordered as
+Customer "1" -- "0..*" Reservation : requests
+StockItem "1" -- "0..*" Reservation : held by
+OrderLine "1" -- "0..1" Commission : may require
+SaleLine "1" -- "0..*" ReturnCase : subject of
+OrderLine "0..1" -- "0..*" SaleLine : fulfilled through
+Product "1" -- "0..*" SaleLine : sold as
+Customer "0..1" -- "0..*" Sale : purchases
+Volunteer "1" -- "0..*" Sale : processes
+Sale "1" -- "1..*" SaleLine : contains
+@enduml
