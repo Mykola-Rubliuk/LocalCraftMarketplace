@@ -269,3 +269,103 @@ The use-case diagram is provided in a separate PlantUML file: ``diagrams/use-cas
 **E2 — Incomplete customer/condition information (from step 6):** System rejects confirmation and identifies missing required reservation details. The volunteer may correct the information and retry.
 
 **Business rules / assumptions:** BR-04; A-01 and A-02 remain proposed.
+
+## 7. User Stories, Acceptance Criteria and Gherkin
+
+### 7.1 Story-to-test summary
+
+| Story | Value | Related FR/UC | Acceptance focus | Gherkin |
+|---|---|---|---|---|
+| US-01 Reserve an item | Prevent conflicting commitments | FR-04/05, UC-02 | Reserve available item; reject reserved item | SC-01/02/03 |
+| US-02 Track partial fulfilment | Customer knows ready items | FR-06/07, UC-04 | Change one line without changing another | SC-04 |
+| US-03 Control commission changes | Preserve agreed specifications | FR-08, UC-05 | Proposed change not effective until approval | SC-05 |
+
+### 7.2 Acceptance criteria and Gherkin
+
+The user stories and Gherkin scenarios are provided in separate files:
+
+* User stories: ``requirements/user-stories.md``
+* Gherkin scenarios: ``features/marketplace.feature``
+
+## 8. Candidate-Concept Analysis and Glossary
+
+### 8.1 Candidate extraction and decisions
+
+| Candidate | Source phrase / evidence | Classification | Decision | Reason |
+|---|---|---|---|---|
+| Maker | Independent makers supply goods | Entity | Keep | Distinct party with product and transaction attribution |
+| Product | Description, materials, price, maker | Entity | Keep | Describes a type/design offered for sale |
+| One-off piece | Unique pieces differ from design | Entity | Convert to StockItem | Represents a distinguishable physical instance |
+| Stock location | Shop, maker, event, display | Entity | Keep as Location | Reusable location of holdings |
+| Stock movement | Products move to markets | Event/transaction | Keep | Explains location changes |
+| Customer | Orders, approvals and returns | Entity | Keep | Identifies the party placing an order |
+| Order | May contain several makers' items | Entity | Keep | Groups customer commitments |
+| Order item | Each part may be ready at a different time | Entity | Keep as OrderLine | Required for line-level state |
+| Reservation | Items held pending payment | Entity | Keep | Separate time-bound commitment |
+| Commission | Custom specifications and dates | Entity | Keep | Records agreed custom work |
+| Commission change | Maker proposes changed terms | Event | Merge into Commission in simplified model | Keep approval history as attributes/records pending richer model |
+| Return/repair | Different outcomes | Entity | Keep as ReturnCase | Tracks after-sales issue and outcome |
+| Sale record | Maker payments need evidence | Entity | Keep as Sale and SaleLine | Sale groups a transaction; SaleLine records each sold product and its adjustments |
+| Discount | Complicates reconciliation | Value/attribute | Convert to SaleLine attribute | Monetary adjustment rather than independent actor |
+| Colour | Products may differ in colour | Attribute | Convert to Product/StockItem attribute | Describes an item, not a separate business party |
+| Spreadsheet | Current storage method | Implementation artefact | Remove | Not a business concept in target domain |
+| Payment gateway | Online payment excluded | External technology | Remove | Out of scope |
+
+The main modelling decision is to distinguish `Product` (type/design) from `StockItem` (physical instance). 
+This supports one-off pieces while still allowing standard goods to be represented as multiple units. 
+It is a **proposed modelling interpretation**, not an agreed identification policy; confirm Q-02.
+
+### 8.2 Glossary
+
+| Term | Definition |
+|---|---|
+| Maker | Independent craft producer supplying goods through the cooperative |
+| Product | Described type or design of craft item, including its main description, materials and base price |
+| StockItem | Identifiable physical unit of a product in the proposed model, allowing distinguishable pieces to be tracked separately |
+| Location | Place where stock is currently held, such as the shop, a market, a maker's premises or a display area |
+| StockMovement | Record of a physical item's transfer between locations |
+| Customer | Person placing an order, requesting a reservation or contacting the cooperative about an after-sales issue |
+| CustomerOrder | Customer commitment that can contain several items |
+| OrderLine | One product and requested quantity within an order, with its own agreed price and fulfilment status |
+| Reservation | Recorded temporary commitment to hold a specific StockItem for a customer |
+| Commission | Record of agreed customised work, including specifications, target date, agreed price and approval status |
+| ReturnCase | Recorded return, repair or exchange request and outcome |
+| Volunteer | Cooperative volunteer who can process sales but must not access confidential maker-payment information |
+| Sale | Record of a sales transaction, including its reference, date and status |
+| SaleLine | Individual line within a sale, recording the product sold, quantity, sold price and relevant financial adjustments |
+
+## 9. Conceptual Domain Model
+
+The Conceptual Domain Model is provided in the separate file ``diagrams/domain-model.puml``.
+It contains **14 conceptual classes**: Maker, Product, StockItem, Location, StockMovement, Customer, CustomerOrder, OrderLine, Reservation, Commission, ReturnCase, Volunteer, Sale and SaleLine. The diagram uses **selected attributes**, not every field a future implementation might store. Attributes are limited to those needed to explain the domain concepts and core requirements. There are no methods, controllers, repositories, UI controls, database foreign keys or navigability arrows.
+
+### 9.1 Key association rationale
+
+- One Maker supplies zero or many Products; each Product has one Maker.
+- One Product describes zero or many StockItems; each StockItem is of one Product. The instance-level approach is proposed to represent one-off pieces clearly.
+- One Customer places zero or many CustomerOrders; each order belongs to one customer.
+- One CustomerOrder contains one or more OrderLines; each OrderLine refers to one Product. The specific physical StockItem can be assigned later, if known.
+- One StockItem is held at one current Location, while a Location holds zero or many items.
+- One StockMovement refers to one StockItem and has one origin and one destination Location. A StockItem can have many movements.
+- One Customer may request many Reservations; a Reservation holds one StockItem. Whether sequential historical reservations are retained is proposed; conflicting **active** reservations are not permitted under the sample acceptance criteria.
+- A Commission is linked to one OrderLine in this simplified model; not every OrderLine is commissioned.
+- A ReturnCase may relate to a SaleLine; a SaleLine can have multiple after-sales cases over time in this proposed model.
+- Each Sale contains one or more SaleLines; each SaleLine refers to one Product and is processed by one Volunteer. A Sale may be associated with a Customer if the sale is linked to a known customer; anonymous walk-in sales should be allowed if that matches the cooperative's process.
+- A SaleLine may fulfil part of an OrderLine, and one OrderLine may be fulfilled through multiple SaleLines. A SaleLine may be linked to zero or one OrderLine for walk-in sales.
+- A ReturnCase relates to a SaleLine. The exact deposit/refund evidence and accounting treatment remain Q-06.
+
+### 9.4 Decision Log
+
+| ID | Decision | Evidence / rationale | Status |
+|---|---|---|---|
+| D-01 | Separate Product design from physical StockItem | One-off pieces can differ in finish; individual stock movements must be tracked | Proposed; confirm item-identification policy through Q-02 |
+| D-02 | Keep fulfilment status on each OrderLine | Orders involving multiple makers can be partially fulfilled | Supported modelling choice |
+| D-03 | Allow Makers to maintain their own product records through restricted internal access | Makers provide product descriptions, materials, dimensions, prices, photographs and care information; direct system access is not confirmed in the scenario | Proposed assumption A-09; confirm through Q-07 |
+| D-04 | Record proposed commission changes separately from approved terms | Messages can create uncertainty about agreed specifications, prices and completion dates | Proposed; confirm approval rules through Q-04 |
+| D-05 | Do not hard-code a universal three-day reservation expiry | The scenario does not specify an approved reservation duration | Open; Q-01 |
+| D-06 | Restrict Makers to their own product records and keep confidential maker-payment summaries unavailable to Volunteers | Supports product-data responsibility while preserving the stated volunteer privacy constraint | Proposed; confirm role permissions through Q-07 |
+| D-07 | Separate Sale from SaleLine | A sale can contain multiple sold items; each line needs its own price and financial adjustments | Proposed modelling choice; confirm transaction evidence through Q-06 |
+
+## 10. Traceability Matrix
+
+The traceability matrix is provided in the separate file `requirements/traceability.csv`.
