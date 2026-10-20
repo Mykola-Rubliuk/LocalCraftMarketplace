@@ -356,15 +356,6 @@ It contains **14 conceptual classes**: Maker, Product, StockItem, Location, Stoc
 
 ### 9.4 Decision Log
 
-| ID | Decision | Evidence / rationale | Status |
-|---|---|---|---|
-| D-01 | Separate Product design from physical StockItem | One-off pieces can differ in finish; individual stock movements must be tracked | Proposed; confirm item-identification policy through Q-02 |
-| D-02 | Keep fulfilment status on each OrderLine | Orders involving multiple makers can be partially fulfilled | Supported modelling choice |
-| D-03 | Allow Makers to maintain their own product records through restricted internal access | Makers provide product descriptions, materials, dimensions, prices, photographs and care information; direct system access is not confirmed in the scenario | Proposed assumption A-09; confirm through Q-07 |
-| D-04 | Record proposed commission changes separately from approved terms | Messages can create uncertainty about agreed specifications, prices and completion dates | Proposed; confirm approval rules through Q-04 |
-| D-05 | Do not hard-code a universal three-day reservation expiry | The scenario does not specify an approved reservation duration | Open; Q-01 |
-| D-06 | Restrict Makers to their own product records and keep confidential maker-payment summaries unavailable to Volunteers | Supports product-data responsibility while preserving the stated volunteer privacy constraint | Proposed; confirm role permissions through Q-07 |
-| D-07 | Separate Sale from SaleLine | A sale can contain multiple sold items; each line needs its own price and financial adjustments | Proposed modelling choice; confirm transaction evidence through Q-06 |
 
 ## 10. Traceability Matrix
 
