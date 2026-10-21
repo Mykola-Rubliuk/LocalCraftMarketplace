@@ -5,8 +5,6 @@
 **A** = proposed assumption requiring confirmation
 **Q** = clarification question
 **D** = analyst's proposed design/analysis decision. 
-A requirement can be proposed on the basis of evidence without implying that the detailed business policy has been confirmed. 
-This report analyses marketplace coordination, not an implemented application.
 
 ## 1. Scenario Interpretation
 
@@ -159,7 +157,7 @@ Public e-commerce, online payment processing and full accounting are Won't for t
 
 ### 5.1 Evidence-supported business rules / policy constraints
 
-These are business-level obligations strongly supported by the scenario, not newly invented durations or financial formulas.
+These are business-level obligations strongly supported by the scenario.
 
 | ID | Rule | Evidence / qualification | Related requirements |
 |---|---|---|---|
@@ -341,22 +339,25 @@ It contains **14 conceptual classes**: Maker, Product, StockItem, Location, Stoc
 
 ### 9.1 Key association rationale
 
-- One Maker supplies zero or many Products; each Product has one Maker.
-- One Product describes zero or many StockItems; each StockItem is of one Product. The instance-level approach is proposed to represent one-off pieces clearly.
-- One Customer places zero or many CustomerOrders; each order belongs to one customer.
-- One CustomerOrder contains one or more OrderLines; each OrderLine refers to one Product. The specific physical StockItem can be assigned later, if known.
+- One Maker supplies zero or many Products - each Product has one Maker.
+- One Product describes zero or many StockItems - each StockItem is of one Product. The instance-level approach is proposed to represent one-off pieces clearly.
+- One Customer places zero or many CustomerOrders - each order belongs to one customer.
+- One CustomerOrder contains one or more OrderLines - each OrderLine refers to one Product. The specific physical StockItem can be assigned later, if known.
 - One StockItem is held at one current Location, while a Location holds zero or many items.
 - One StockMovement refers to one StockItem and has one origin and one destination Location. A StockItem can have many movements.
-- One Customer may request many Reservations; a Reservation holds one StockItem. Whether sequential historical reservations are retained is proposed; conflicting **active** reservations are not permitted under the sample acceptance criteria.
-- A Commission is linked to one OrderLine in this simplified model; not every OrderLine is commissioned.
-- A ReturnCase may relate to a SaleLine; a SaleLine can have multiple after-sales cases over time in this proposed model.
-- Each Sale contains one or more SaleLines; each SaleLine refers to one Product and is processed by one Volunteer. A Sale may be associated with a Customer if the sale is linked to a known customer; anonymous walk-in sales should be allowed if that matches the cooperative's process.
+- One Customer may request many Reservations - a Reservation holds one StockItem. 
+Whether sequential historical reservations are retained is proposed.
+Conflicting active reservations are not permitted under the sample acceptance criteria.
+- A Commission is linked to one OrderLine in this simplified model - not every OrderLine is commissioned.
+- A ReturnCase may relate to a SaleLine - a SaleLine can have multiple after-sales cases over time in this proposed model.
+- Each Sale contains one or more SaleLines - each SaleLine refers to one Product and is processed by one Volunteer. A Sale may be associated with a Customer if the sale is linked to a known customer; anonymous walk-in sales should be allowed if that matches the cooperative's process.
 - A SaleLine may fulfil part of an OrderLine, and one OrderLine may be fulfilled through multiple SaleLines. A SaleLine may be linked to zero or one OrderLine for walk-in sales.
 - A ReturnCase relates to a SaleLine. The exact deposit/refund evidence and accounting treatment remain Q-06.
 
 ### 9.4 Decision Log
 
+The architectural decision log is provided in the separate file ``decisions/decisions-log.md``.
 
 ## 10. Traceability Matrix
 
-The traceability matrix is provided in the separate file `requirements/traceability.csv`.
+The traceability matrix is provided in the separate file ``requirements/traceability.csv``.
