@@ -39,23 +39,23 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.0000000024411546" />
-      <entry key="MS500" value="1.0221850422736773" />
-      <entry key="S2" value="1.6095748470356712" />
-      <entry key="S5" value="2.236290570176214" />
-      <entry key="S10" value="2.5710535224305024" />
-      <entry key="S30" value="3.05806191727587" />
-      <entry key="S60" value="4.878206672908818" />
-      <entry key="M2" value="9.475135102841158" />
-      <entry key="M5" value="17.433349434060148" />
-      <entry key="M10" value="22.876423172749867" />
-      <entry key="M15" value="25.834647337205606" />
-      <entry key="M30" value="31.441243167749057" />
-      <entry key="H1" value="38.72354492103189" />
-      <entry key="H2" value="46.457966492450154" />
-      <entry key="H4" value="52.53376193283121" />
-      <entry key="D1" value="59.381338786451515" />
-      <entry key="W1" value="60.76302296473957" />
+      <entry key="MS100" value="1.0000000000006617" />
+      <entry key="MS500" value="1.0046536392044907" />
+      <entry key="S2" value="1.523296435644447" />
+      <entry key="S5" value="2.473088097137042" />
+      <entry key="S10" value="3.1466586013439515" />
+      <entry key="S30" value="4.289812888352911" />
+      <entry key="S60" value="5.464546080410665" />
+      <entry key="M2" value="7.57731068818847" />
+      <entry key="M5" value="11.532025257437912" />
+      <entry key="M10" value="14.776234869462568" />
+      <entry key="M15" value="16.500722389674806" />
+      <entry key="M30" value="18.809594017339347" />
+      <entry key="H1" value="20.282065610301974" />
+      <entry key="H2" value="21.956657165318315" />
+      <entry key="H4" value="29.124904307307002" />
+      <entry key="D1" value="69.57395467256094" />
+      <entry key="W1" value="87.43102931491109" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
@@ -77,23 +77,23 @@
       <entry key="W1" value="0.0" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="0.9330329937987498" />
-      <entry key="MS500" value="1.0080775882497552" />
-      <entry key="S2" value="1.6037132918910173" />
-      <entry key="S5" value="2.232943403112408" />
-      <entry key="S10" value="2.5691112375993277" />
-      <entry key="S30" value="3.0573000675402167" />
-      <entry key="S60" value="4.87764484866435" />
-      <entry key="M2" value="9.474625248611973" />
-      <entry key="M5" value="17.432972811466016" />
-      <entry key="M10" value="22.876161148897523" />
-      <entry key="M15" value="25.834435973766738" />
-      <entry key="M30" value="31.441089129654344" />
-      <entry key="H1" value="38.7234279183506" />
-      <entry key="H2" value="46.4578843881371" />
-      <entry key="H4" value="52.53371115889736" />
-      <entry key="D1" value="59.381328446340625" />
-      <entry key="W1" value="60.76302143270144" />
+      <entry key="MS100" value="0.9201876506255097" />
+      <entry key="MS500" value="0.9881195426806416" />
+      <entry key="S2" value="1.5181777596749633" />
+      <entry key="S5" value="2.470336222546243" />
+      <entry key="S10" value="3.144996135391391" />
+      <entry key="S30" value="4.288979336349678" />
+      <entry key="S60" value="5.463986406172918" />
+      <entry key="M2" value="7.576921717851579" />
+      <entry key="M5" value="11.531628236139918" />
+      <entry key="M10" value="14.775729304556851" />
+      <entry key="M15" value="16.500224760342608" />
+      <entry key="M30" value="18.809216426864694" />
+      <entry key="H1" value="20.281831087539842" />
+      <entry key="H2" value="21.95652422432962" />
+      <entry key="H4" value="29.124825659376206" />
+      <entry key="D1" value="69.57393231947665" />
+      <entry key="W1" value="87.43102554690172" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -105,29 +105,29 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "DefaultPlantUmlFileTemplate": "UML Use Case",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.MCP Project settings loaded": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "main",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/rubly/OneDrive - Munster Technological University/Year 3/LocalCraftMarketplace/ca1-analysis/requirements",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.jshint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.jshint": "",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "onboarding.tips.debug.path": "C:/Users/rubly/OneDrive - Munster Technological University/Year 3/LocalCraftMarketplace/src/Main.java",
-    "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;DefaultPlantUmlFileTemplate&quot;: &quot;UML Use Case&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/rubly/OneDrive - Munster Technological University/Year 3/LocalCraftMarketplace/ca1-analysis/requirements&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.jshint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.jshint&quot;: &quot;&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;onboarding.tips.debug.path&quot;: &quot;C:/Users/rubly/OneDrive - Munster Technological University/Year 3/LocalCraftMarketplace/src/Main.java&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;project.propVCSSupport.DirectoryMappings&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\rubly\OneDrive - Munster Technological University\Year 3\LocalCraftMarketplace\ca1-analysis\requirements" />
