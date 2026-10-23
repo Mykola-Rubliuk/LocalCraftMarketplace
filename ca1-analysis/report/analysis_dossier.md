@@ -6,7 +6,8 @@
 **A** = proposed assumption requiring confirmation
 **Q** = clarification question
 **D** = analyst's proposed design/analysis decision. 
-A requirement can be proposed on the basis of evidence without implying that the detailed business policy has been confirmed. 
+A requirement can be proposed on the basis of evidence without implying that the 
+detailed business policy has been confirmed. 
 This report analyses marketplace coordination, not an implemented application.
 
 ## 1. Scenario Interpretation
@@ -270,7 +271,7 @@ The use-case diagram is provided in a separate PlantUML file: ``diagrams/use-cas
 
 **E2 — Incomplete customer/condition information (from step 6):** System rejects confirmation and identifies missing required reservation details. The volunteer may correct the information and retry.
 
-**Business rules / assumptions:** BR-04; A-01 and A-02 remain proposed.
+**Business rules / assumptions:** A-01 and A-02 remain proposed.
 
 ## 7. User Stories, Acceptance Criteria and Gherkin
 
