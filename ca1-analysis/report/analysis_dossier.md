@@ -126,7 +126,7 @@ Priorities below are proposed and require manager validation.
 
 | ID    | Atomic requirement                                                                                                               | Source and rationale                                               | MoSCoW | Verification                                  | Links                                                           |
 |-------|----------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------|--------|-----------------------------------------------|-----------------------------------------------------------------|
-| FR-01 | The system shall record a product's maker, description and selling price.                                                        | [E](#Evidence-convention): product records include maker and price; consistent attribution | Must   | Create/read record with those fields          | [P-02](#12-Problems-evidence-and-consequences); [UC-08](#61-Catalogue); Product                      |
+| FR-01 | The system shall record a product's maker, description and selling price.                                                        | [E](#Evidence-convention): product records include maker and price | Must   | Create/read record with those fields          | [P-02](#12-Problems-evidence-and-consequences); [UC-08](#61-Catalogue); Product                      |
 | FR-02 | The system shall record an identified stock item's current stock location.                                                       | [E](#Evidence-convention): stock is held at different locations                            | Must   | Record and retrieve location                  | [P-01](#12-Problems-evidence-and-consequences); [UC-03](#61-Catalogue); StockItem                                          |
 | FR-03 | The system shall record a stock movement with item, origin, destination and event date.                                          | [E](#Evidence-convention): stock moves without shop records changing                       | Must   | Inspect recorded transfer history             | [P-01](#12-Problems-evidence-and-consequences); [UC-03](#61-Catalogue); StockMovement                     |
 | FR-04 | The system shall indicate whether a selected item is available for commitment, based on recorded sales and active reservations.  | [E](#Evidence-convention): available counts include sold/reserved items                    | Must   | Test sold, reserved and available examples    | [P-01/P-03](#12-Problems-evidence-and-consequences); [UC-02](#61-Catalogue); StockItem                    |
@@ -284,19 +284,18 @@ The following table summarises the user stories, their expected value, related f
 | US-02 Track partial fulfilment             | Help staff identify which items are ready for collection             | [FR-06/07](#41-Functional-requirements), [UC-04](#61-Catalogue)                 | Update one order line without changing the fulfilment status of other lines                             | SC-04    (`marketplace.feature`)     |
 | US-03 Control commission changes           | Preserve agreed specifications and avoid misunderstandings           | [FR-08](#41-Functional-requirements), [UC-05](#61-Catalogue)                    | A proposed change does not replace the approved terms until it is accepted                              | SC-05 (`marketplace.feature`)        |
 | US-04 Record stock movements               | Maintain accurate stock availability                                 | [FR-02/03](#41-Functional-requirements), [UC-03](#61-Catalogue)                 | Record a stock movement and update the item's recorded location and availability                        | SC-06 (`marketplace.feature`)        |
-| US-05 Record customer sales                | Maintain reliable sales records for the cooperative                  | [FR-01/09](#41-Functional-requirements), [UC-01](#61-Catalogue)                 | Record a sale with the relevant items, quantities and selling prices                                    | SC-07  (`marketplace.feature`)       |
+| US-05 Record customer sales                | Maintain reliable sales records for the cooperative                  | [FR-10](#41-Functional-requirements), [UC-01](#61-Catalogue)                 | Record a sale with the relevant items, quantities and selling prices                                    | SC-07  (`marketplace.feature`)       |
 | US-06 Protect maker-payment information    | Prevent unauthorised access to confidential financial information    | [NFR-01](#42-Measurable-non-functional-requirements), [UC-07](#61-Catalogue)    | Allow a volunteer to process a sale while denying access to confidential maker-payment summaries        | SC-08 (`marketplace.feature`)        |
-| US-07 Record return requests               | Ensure customer issues are documented and can be reviewed            | [FR-10](#41-Functional-requirements), [UC-06/09](#61-Catalogue)                 | Record a return request and allow the manager to review its outcome                                     | SC-09  (`marketplace.feature`)       |
+| US-07 Record return requests               | Ensure customer issues are documented and can be reviewed            | [FR-9](#41-Functional-requirements), [UC-06/09](#61-Catalogue)                 | Record a return request and allow the manager to review its outcome                                     | SC-09  (`marketplace.feature`)       |
 | US-08 Maintain product information         | Keep product descriptions and prices accurate                        | [FR-01](#41-Functional-requirements), [UC-08](#61-Catalogue)                    | Allow a maker to update their own product information without changing another maker's records          | SC-10 (`marketplace.feature`)        |
 | US-09 Record sales during internet outages | Allow market operations to continue when connectivity is unavailable | [NFR-05](#42-Measurable-non-functional-requirements), [UC-01/03](#61-Catalogue) | Record transactions using the documented offline procedure and reconcile them when connectivity returns | SC-11 (`marketplace.feature`)        |
 
-The user stories and Gherkin scenarios are maintained in separate files under `requirements/backlog.md` and `features/marketplace.feature`, respectively.
 
 ### 7.2 Acceptance criteria and Gherkin
 
 The user stories and Gherkin scenarios are provided in separate files:
 
-* User stories: ``requirements/user-stories.md``
+* User stories: ``requirements/backlog.md``
 * Gherkin scenarios: ``features/marketplace.feature``
 
 ## 8. Candidate-Concept Analysis and Glossary
@@ -366,7 +365,7 @@ It contains **14 conceptual classes**: Maker, Product, StockItem, Location, Stoc
 - A SaleLine may fulfil part of an OrderLine, and one OrderLine may be fulfilled through multiple SaleLines. A SaleLine may be linked to zero or one OrderLine for walk-in sales.
 - A ReturnCase relates to a SaleLine. The exact deposit/refund evidence and accounting treatment remain Q-06.
 
-### 9.4 Decision Log
+### 9.2 Decision Log
 
 | ID   | Decision                                                                                                             | Evidence / rationale                                                                                                                                        | Status                                                               |
 |------|----------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|
@@ -381,3 +380,48 @@ It contains **14 conceptual classes**: Maker, Product, StockItem, Location, Stoc
 ## 10. Traceability Matrix
 
 The traceability matrix is provided in the separate file `requirements/traceability.csv`.
+
+## 11. AI Declaration
+
+### Reflection
+During this assignment, I learned the importance of structuring requirements clearly and maintaining consistency between requirements, 
+user stories, Gherkin scenarios and diagrams.
+One important decision was to distinguish Product from StockItem to represent product types separately from individual physical items.
+AI was used to help structure the report, improve English grammar and readability, and explain technical aspects non-functional requirements,
+business rules and Gherkin scenarios. AI suggestions were reviewed against the assignment scenario and other project artefacts.
+A limitation of the analysis is that some business rules and system responsibilities cannot be confirmed without further clarification 
+from stakeholders. These remain proposed or unresolved rather than being presented as established facts.
+
+Responsibility for the final decisions and the content of the submitted report remained with me.
+
+## AI Interaction Log
+
+### Interaction 1 — Reservation expiry
+
+**AI suggestion:** Introduce a fixed three-day expiry for unpaid reservations.
+
+**Evidence check:** The scenario does not specify an expiry period.
+
+**Decision:** Modified. The three-day period remains a proposed assumption (A-01), pending clarification (Q-01).
+
+**Reason:** The period cannot be treated as a confirmed business rule without evidence.
+
+### Interaction 2 — Sales and returns traceability
+
+**AI suggestion:** Link the sales user story to FR-10 and the return request story to FR-09.
+
+**Evidence check:** FR-10 covers sales evidence, while FR-09 covers return, exchange and repair cases.
+
+**Decision:** Accepted after checking the requirements and related scenarios.
+
+**Reason:** The mapping reflects the purpose of each requirement more accurately.
+
+### Interaction 3 — Maker access
+
+**AI suggestion:** Allow makers to maintain their own product records.
+
+**Evidence check:** The scenario does not confirm that makers will have direct system access.
+
+**Decision:** Rejected as a confirmed requirement. The proposal remains assumption A-09, represented by UC-08 and US-08.
+
+**Reason:** Useful functionality should not be treated as confirmed without stakeholder evidence.

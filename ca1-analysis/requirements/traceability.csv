@@ -1,11 +1,11 @@
 Problem IDs,Stakeholder IDs,Requirement IDs,Use Case IDs,Acceptance/Gherkin,Domain Concepts
 P-01,ST-03,FR-02;FR-03,UC-03,Movement verification,StockItem;Location;StockMovement
 P-01;P-03,ST-02,FR-04;FR-05,UC-02,US-01;SC-01;SC-02;SC-03,StockItem;Reservation;Customer
-P-02,ST-04,FR-01,UC-08,Product record verification,Maker;Product;StockItem
+P-02,ST-04,FR-01,UC-08,US-07;SC-09,Maker;Product;StockItem
 P-04,ST-05,FR-06;FR-07,UC-04,US-02;SC-04,CustomerOrder;OrderLine;Customer
 P-05,ST-04;ST-05,FR-08,UC-05,US-03;SC-05,Commission;OrderLine
 P-06,ST-05,FR-09,UC-06,Return case verification,ReturnCase;SaleLine
-P-07,ST-01;ST-04,FR-10,UC-01;UC-07,Maker attribution verification,SaleLine;Maker;Product
+P-07,ST-01;ST-04,FR-10,UC-01;UC-07,US-05;SC-07,SaleLine;Maker;Product
 P-08,ST-02,FR-11;NFR-01,UC-07,Role permission test,Maker;SaleLine
 P-04;P-05,ST-01,FR-12,UC-07,Operational summary verification,CustomerOrder;Reservation;Commission
-P-08,ST-03,NFR-05,UC-01;UC-03,Offline reconciliation drill,StockMovement;SaleLine
+P-08,ST-03,NFR-05,UC-01;UC-03,US-06;SC-08,StockMovement;SaleLine

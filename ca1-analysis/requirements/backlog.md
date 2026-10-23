@@ -8,8 +8,9 @@
 * **Stakeholder:** ST-02. 
 * **Requirements:** FR-04, FR-05. 
 * **Use case:** UC-02. 
-* **Rules:** BR-04, A-01/A-02 (unconfirmed). 
+* **Rules:** A-01/A-02 (unconfirmed). 
 * **Gherkin:** SC-01, SC-02, SC-03.
+* 
 - **AC-01:** A reservation for an available item is recorded with customer and agreed conditions.
 - **AC-02:** A second conflicting active reservation is rejected.
 - **AC-03:** Reservation expiry is applied only according to an approved policy.
@@ -24,6 +25,7 @@
 * **Requirements:** FR-06, FR-07. 
 * **Use case:** UC-04. 
 * **Gherkin:** SC-04.
+* 
 - **AC-04:** A collected line can be marked collected without marking uncollected lines collected.
 - **AC-05:** The order remains incomplete when another line is still being made.
 - **Question:** Q-03.
@@ -54,7 +56,6 @@
 
 * **AC-08:** A stock movement is recorded with the item, movement date, reason and relevant location details.
 * **AC-09:** The item's recorded location is updated after a confirmed movement.
-* **AC-10:** An item that is reserved or temporarily unavailable is not presented as available for a new reservation.
 * **Question:** Q-03.
 
 ## US-05 — Record customer sales
@@ -64,13 +65,13 @@
 
 - **Priority:** Must (proposed).
 - **Stakeholder:** ST-02.
-- **Requirements:** FR-01, FR-09.
+- **Requirements:** FR-01, FR-10.
 - **Use case:** UC-01.
 - **Gherkin:** SC-07.
 
-* **AC-11:** A completed sale records the items sold, quantities and applicable selling prices.
-* **AC-12:** A sale is associated with the relevant maker or makers through the recorded products.
-* **AC-13:** A completed sale is reflected in the recorded stock information.
+* **AC-10:** A completed sale records the items sold, quantities and applicable selling prices.
+* **AC-11:** A sale is associated with the relevant maker or makers through the recorded products.
+* **AC-12:** A completed sale is reflected in the recorded stock information.
 * **Question:** Q-06.
 
 ## US-06 — Protect maker-payment information
@@ -80,13 +81,13 @@
 
 - **Priority:** Must (proposed).
 - **Stakeholder:** ST-01/ST-02.
-- **Requirement:** NFR-01.
+- **Requirement:** NFR-01 and FR-11
 - **Use case:** UC-07.
 - **Gherkin:** SC-08.
 
-* **AC-14:** A manager can access the maker-payment summaries permitted by their role.
-* **AC-15:** A shop volunteer cannot access confidential maker-payment summaries.
-* **AC-16:** Restricting access to payment summaries does not prevent an authorised volunteer from recording a customer sale.
+* **AC-13:** A manager can access the maker-payment summaries permitted by their role.
+* **AC-14:** A shop volunteer cannot access confidential maker-payment summaries.
+* **AC-15:** Restricting access to payment summaries does not prevent an authorised volunteer from recording a customer sale.
 * **Question:** Role permissions to be confirmed.
 
 ## US-07 — Record customer return requests
@@ -96,14 +97,14 @@
 
 - **Priority:** Should (proposed).
 - **Stakeholder:** ST-02/ST-05.
-- **Requirements:** FR-10.
+- **Requirements:** FR-9.
 - **Use cases:** UC-06, UC-09.
 - **Gherkin:** SC-09.
 
-* **AC-17:** A return request records the relevant sale or item, the reason and the date.
-* **AC-18:** The request can be referred to the manager for review.
-* **AC-19:** The request's outcome is recorded after a decision is made.
-* **Question:** Q5
+* **AC-16:** A return request records the relevant sale or item, the reason and the date.
+* **AC-17:** The request can be referred to the manager for review.
+* **AC-18:** The request's outcome is recorded after a decision is made.
+* **Question:** Q-05
 
 ## US-08 — Maintain product information
 
@@ -112,13 +113,13 @@
 
 - **Priority:** Should (proposed).
 - **Stakeholder:** ST-04.
-- **Requirement:** FR-01.
+- **Requirement:** FR-01, A-09.
 - **Use case:** UC-08.
 - **Gherkin:** SC-10.
 
-* **AC-20:** An authorised maker can update the product records they are permitted to manage.
-* **AC-21:** A maker cannot modify another maker's product records without authorisation.
-* **AC-22:** Updated product information is available to authorised staff.
+* **AC-19:** An authorised maker can update the product records they are permitted to manage.
+* **AC-20:** A maker cannot modify another maker's product records without authorisation.
+* **AC-21:** Updated product information is available to authorised staff.
 * **Question:** Q-07.
 
 ## US-09 — Handle market transactions during internet outages
@@ -132,7 +133,7 @@
 - **Use cases:** UC-01, UC-03.
 - **Gherkin:** SC-11.
 
-* **AC-23:** Staff can follow a documented procedure to record transactions during an internet outage.
-* **AC-24:** Transactions recorded offline can be reconciled with the main system when connectivity returns.
-* **AC-25:** Duplicate or conflicting records are identified and referred for resolution.
+* **AC-22:** Staff can follow a documented procedure to record transactions during an internet outage.
+* **AC-23:** Transactions recorded offline can be reconciled with the main system when connectivity returns.
+* **AC-24:** Duplicate or conflicting records are identified and referred for resolution.
 * **Question:** Q-08.
