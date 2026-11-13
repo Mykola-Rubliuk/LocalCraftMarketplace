@@ -1,11 +1,14 @@
-Problem IDs,Stakeholder IDs,Requirement IDs,Use Case IDs,Acceptance/Gherkin,Domain Concepts
-P-01,ST-03,FR-02;FR-03,UC-03,Movement verification,StockItem;Location;StockMovement
-P-01;P-03,ST-02,FR-04;FR-05,UC-02,US-01;SC-01;SC-02;SC-03,StockItem;Reservation;Customer
-P-02,ST-04,FR-01,UC-08,US-07;SC-09,Maker;Product;StockItem
-P-04,ST-05,FR-06;FR-07,UC-04,US-02;SC-04,CustomerOrder;OrderLine;Customer
-P-05,ST-04;ST-05,FR-08,UC-05,US-03;SC-05,Commission;OrderLine
-P-06,ST-05,FR-09,UC-06,Return case verification,ReturnCase;SaleLine
-P-07,ST-01;ST-04,FR-10,UC-01;UC-07,US-05;SC-07,SaleLine;Maker;Product
-P-08,ST-02,FR-11;NFR-01,UC-07,Role permission test,Maker;SaleLine
-P-04;P-05,ST-01,FR-12,UC-07,Operational summary verification,CustomerOrder;Reservation;Commission
-P-08,ST-03,NFR-05,UC-01;UC-03,US-06;SC-08,StockMovement;SaleLine
+Trace ID,Problem IDs,Stakeholder IDs,Requirement IDs,Rule/Assumption IDs,Use Case IDs,Story IDs,Gherkin IDs,Domain Concepts,Risk/Question IDs,Verification
+TR-01,P-01,ST-03,FR-02;FR-03,A-03,UC-03,US-04,SC-06,StockItem;Location;StockMovement,R-01;Q-02,Gherkin
+TR-02,P-01;P-03,ST-02,FR-04;FR-05,A-01;A-02,UC-02,US-01,SC-01;SC-02;SC-03,StockItem;Reservation;Customer,R-01;R-02;Q-01,Gherkin
+TR-03,P-02,ST-04,FR-01,A-03;A-09,UC-08,US-08,SC-10,Maker;Product;StockItem,R-03;Q-02;Q-07,Gherkin
+TR-04,P-04,ST-05,FR-06;FR-07,BR-02;BR-03;A-04,UC-04,US-02,SC-04,CustomerOrder;OrderLine;Customer,R-04;Q-03,Gherkin
+TR-05,P-05,ST-01;ST-04;ST-05,FR-08,A-05,UC-05,US-03,SC-05,Commission;OrderLine,R-05;Q-04,Gherkin
+TR-06,P-06,ST-02;ST-05,FR-09,A-06,UC-06;UC-09,US-07,SC-09,ReturnCase;SaleLine,Q-05,Gherkin
+TR-07,P-07,ST-01;ST-02;ST-04;ST-06,FR-01;FR-10,BR-01,UC-01;UC-07,US-05,SC-07,Sale;SaleLine;Maker;Product,R-06;Q-06,Gherkin
+TR-08,P-08,ST-01;ST-02,FR-11;NFR-01,BR-04;A-07,UC-07,US-06,SC-08,Volunteer;Maker;SaleLine,R-07;Q-07,Gherkin
+TR-09,P-04;P-05,ST-01,FR-12,-,UC-07,US-10,SC-16,CustomerOrder;Reservation;Commission,-,Gherkin
+TR-10,P-08,ST-01;ST-03,FR-13;NFR-05,A-08;A-10,UC-01;UC-10,US-09,SC-11;SC-12;SC-13;SC-14;SC-15,Sale;SaleLine;OfflineTransaction;MarketCoordinator,R-08;R-09;Q-08;Q-09,Gherkin
+TR-11,P-01,ST-02,NFR-02,-,UC-01;UC-02,-,-,StockItem,R-01,Non-functional test (CA3)
+TR-12,P-01,ST-03,NFR-03,-,UC-03,US-04,-,StockMovement,R-01,Non-functional test (CA3)
+TR-13,-,ST-02,NFR-04,-,UC-01,US-05,-,Sale,-,Non-functional test (usability observation in CA3)
