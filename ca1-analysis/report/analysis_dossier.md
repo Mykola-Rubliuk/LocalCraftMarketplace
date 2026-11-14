@@ -49,7 +49,7 @@ Market activities must remain workable during internet interruptions, with a rel
 
 The scenario confirms that these problems and operational activities exist, but does not establish reservation durations, a universal unique-item policy, 
 approval authority, return eligibility, maker fee calculations or detailed permissions. 
-Accordingly, proposed rules are explicitly labelled A-01 to A-09 and linked to clarification questions Q-01 to Q-08. 
+Accordingly, proposed rules are explicitly labelled A-01 to A-10 and linked to clarification questions Q-01 to Q-09. 
 No assumption is treated as an approved business rule.
 
 ## 2. Purpose, Scope and Boundary
@@ -64,7 +64,7 @@ rather than replace physical craft production or introduce public online selling
 
 The initial system covers product and unique-item identification, stock holdings and movements, availability and reservations,
 multi-maker orders with line-level fulfilment, commission specifications and proposed changes, sales, discounts, deposits,  
-returns, repairs and exchanges as recorded cases; operational reports and role-restricted access. 
+returns, repairs and exchanges as recorded cases; operational reports; role-restricted access; and the entry and reconciliation of market sales that were captured during internet outages. 
 
 ### 2.3 Out of scope
 
@@ -79,6 +79,7 @@ Shop Volunteer, Manager and Market Coordinator are direct actors.
 For this revised model, **Maker access to the internal system is a proposed assumption**: a Maker can maintain only their own product records, 
 subject to role permissions. This is not confirmed by the scenario and must be checked through Q-07. Customer remains an offstage stakeholder. 
 No public customer login or e-commerce is proposed. Any external payment provider remains outside the system boundary.
+The offline form used during an internet outage is a manual procedure outside the system boundary. The system records its content once connectivity returns and supports reconciliation (see section 5.6).
 
 ### 2.5 Dependencies, assumptions and constraints
 
@@ -105,8 +106,8 @@ and full accounting. Proposed policies are maintained in the uncertainty registe
 | Actor              | Type                                     | Goal                                                                                            | Use cases                                             |
 |--------------------|------------------------------------------|-------------------------------------------------------------------------------------------------|----------------------------------------------------------|
 | Shop Volunteer     | Primary                                  | Record a sale and order decisions; reserve items; open a return case                            | [UC-01, UC-02, UC-04, UC-06](#61-Catalogue)              |
-| Market Coordinator | Primary                                  | Record stock transfers and event transactions                                                   | [UC-03, UC-01](#61-Catalogue)                            |
-| Manager            | Primary                                  | Coordinate commission decisions; review marketplace operations, maker evidence and return cases | [UC-05, UC-07, UC-09](#61-Catalogue)                     |
+| Market Coordinator | Primary                                  | Record stock transfers and event transactions; enter and reconcile offline transactions                                                   | [UC-03, UC-01, UC-10](#61-Catalogue)                            |
+| Manager            | Primary                                  | Coordinate commission decisions; review marketplace operations, maker evidence and return cases; resolve duplicate or conflicting offline records | [UC-05, UC-07, UC-09, UC-10](#61-Catalogue)                     |
 | Maker              | Proposed primary actor (assumption A-09) | Maintain own product records and provide input on commission feasibility                        | [UC-05, UC-08](#61-Catalogue)                            |
 | Customer           | Offstage stakeholder                     | Request items and approve changes                                                               | Indirectly influences [UC-02/UC-04/UC-05](#61-Catalogue) |
 
@@ -139,6 +140,7 @@ Priorities below are proposed and require manager validation.
 | FR-10 | The system shall retain sale transaction evidence identifying the maker and monetary adjustments associated with each sold item. | [E](#Evidence-convention): maker payments affected by discounts, deposits, refunds         | Must   | Reconcile sample item with adjustment records | [P-07](#12-Problems-evidence-and-consequences); [UC-01/UC-07](#61-Catalogue); SaleLine                    |
 | FR-11 | The system shall restrict volunteer access to confidential maker payment information.                                            | [E](#Evidence-convention): volunteer should sell without seeing all payment details        | Must   | Authorisation test with volunteer account     | [P-08](#12-Problems-evidence-and-consequences); [UC-07](#61-Catalogue); UserRole                          |
 | FR-12 | The system shall produce an operational view of incomplete orders, reservations and commissions for authorised staff.            | [E](#Evidence-convention): manager needs these summaries                                   | Should | Verify each open record appears               | [P-04/P-05](#12-Problems-evidence-and-consequences); [UC-07](#61-Catalogue); Order/Reservation/Commission |
+| FR-13 | The system shall record each transaction captured during an internet outage with a unique offline reference and a reconciliation status, and shall let an authorised user reconcile it when connectivity returns, flagging duplicate or conflicting records for manager resolution. | [E](#Evidence-convention): unreliable market internet; [A](#Evidence-convention): responsibilities in A-08 and A-10 | Must | Enter one clean, one duplicate and one conflicting offline record and verify each outcome | [P-08](#12-Problems-evidence-and-consequences); [UC-10](#61-Catalogue); OfflineTransaction/Sale |
 
 ### 4.2 Measurable non-functional requirements
 
@@ -150,11 +152,12 @@ These are **proposed acceptance targets**, not scenario facts. Confirm threshold
 | NFR-02 | Performance             | The system shall display recorded stock availability within 3 seconds under normal operating conditions.                                                                                         | Should   | Measure response time during stock-availability checks; [D](#Evidence-convention): proposed target                                                   |
 | NFR-03 | Data integrity          | The system shall retain confirmed stock movements and their history after the application is closed and reopened.                                                                                | Must     | Record stock movements, restart the application and verify the records; [E](#Evidence-convention): inconsistent records                              |
 | NFR-04 | Usability               | A trained Shop Volunteer shall be able to record a standard customer sale using the system without assistance.                                                                                   | Should   | Observe a trained volunteer completing a standard sale; [D](#Evidence-convention): proposed usability target                                         |
-| NFR-05 | Connectivity resilience | The system or an approved offline procedure shall allow market transactions to be recorded during an internet outage and reconciled when connectivity returns, without unaccounted transactions. | Must     | Simulate an outage and verify that recorded transactions can be reconciled; [E](#Evidence-convention): unreliable internet; implementation open Q-08 |
+| NFR-05 | Connectivity resilience | During an internet outage an approved offline procedure shall allow market sales to be recorded, and when connectivity returns the system shall support reconciling them (FR-13) so that no transaction remains unaccounted for. | Must     | Simulate an outage, record sales using the offline procedure, then reconcile them and verify that every one is reconciled or referred; [E](#Evidence-convention): unreliable internet; responsibilities proposed in section 5.6 (Q-08, Q-09) |
 
 ### 4.3 Priority rationale and exclusions
 
 Accurate stock, order-line state, sales evidence and volunteer confidentiality are Must because their absence preserves the core problems. 
+Offline recording and reconciliation (NFR-05, FR-13) are Must because transactions made during an outage would otherwise remain unaccounted for and weaken maker evidence. 
 Commission change history, return outcomes and operational summaries are Should because controlled manual processes might temporarily support them. 
 Automatic promotional recommendations could be Could but are not proposed as a formal requirement because the scenario does not support them. 
 Public e-commerce, online payment processing and full accounting are Won't for this release.
@@ -184,8 +187,9 @@ These are business-level obligations strongly supported by the scenario, not new
 | A-05 | A material, price or target-date change to a commission requires recorded customer approval.                                                                             | Provides change evidence                                                                                        | [Q-04](#55-Clarification-questions), Manager and Maker  |
 | A-06 | Return outcomes are recorded, but eligibility for a refund is decided under an approved policy and applicable law.                                                       | Avoids inventing return rights                                                                                  | [Q-05](#55-Clarification-questions), Manager            |
 | A-07 | Manager may view payment summaries; volunteers may record sales but cannot view confidential maker-payment totals.                                                       | Proposed permission interpretation                                                                              | [Q-07](#55-Clarification-questions), Manager            |
-| A-08 | Event transactions are captured offline and reconciled by an authorised coordinator when connectivity returns.                                                           | Addresses market outage                                                                                         | [Q-08](#55-Clarification-questions), Coordinator        |
+| A-08 | During an outage the Market Coordinator records market sales on an approved offline form with a unique offline reference. When connectivity returns the Coordinator enters and reconciles them, and the Manager resolves duplicate or conflicting records. | Makes responsibility for offline recording, reconciliation and conflict resolution explicit | [Q-08, Q-09](#55-Clarification-questions), Coordinator and Manager |
 | A-09 | Makers can access the internal system to maintain only their own product records; they cannot edit other Makers' records or access confidential maker-payment summaries. | Gives Makers responsibility for keeping their own product details accurate while preserving access restrictions | [Q-07](#55-Clarification-questions), Manager and Makers |
+| A-10 | Only sales are captured offline. New reservations, orders and commission changes wait until connectivity returns; stock movements are entered later with their actual date. | Reduces the risk of double commitment while the system is unavailable | [Q-08, Q-09](#55-Clarification-questions), Coordinator and Manager |
 
 ### 5.3 Constraints
 
@@ -207,7 +211,8 @@ These are business-level obligations strongly supported by the scenario, not new
 | R-05 | Commission change is made without approval.      | Medium / High         | Preserve proposed and approved terms; [Q-04](#55-Clarification-questions)           |
 | R-06 | Maker reconciliation omits refund or discount.   | Medium / High         | Transaction adjustments and review; [Q-06](#55-Clarification-questions)             |
 | R-07 | Volunteer sees restricted maker payments.        | Medium / High         | Permissions and authorisation tests; [Q-07](#55-Clarification-questions)            |
-| R-08 | Offline records conflict when uploaded.          | High / Medium         | Event reconciliation process; [Q-08](#55-Clarification-questions)                   |
+| R-08 | Offline records duplicate or conflict with system records when entered. | High / Medium | Reconciliation by the Coordinator and Manager resolution (FR-13, UC-10); [Q-08, Q-09](#55-Clarification-questions) |
+| R-09 | An offline form is lost, damaged or incomplete. | Medium / High | Unique offline reference and safe retention by the Coordinator (section 5.6); [Q-08](#55-Clarification-questions) |
 
 ### 5.5 Clarification questions
 
@@ -220,7 +225,27 @@ These are business-level obligations strongly supported by the scenario, not new
 | Q-05 | What return, exchange, repair and refund rules apply to standard, damaged and personalised items?                                             | Manager, legal adviser            | [FR-09](#41-Functional-requirements),[UC-06](#61-Catalogue), [A-06](#52-Proposed-assumptions)                                     |
 | Q-06 | How are cooperative fees, deposits, discounts and refunds calculated and allocated to makers?                                                 | Manager, finance support          | [FR-10](#41-Functional-requirements), [A-02](#52-Proposed-assumptions)                                                            |
 | Q-07 | What can each role see or change, and should Makers have access to maintain only their own product records?                                   | Manager, Makers                   | [FR-01, FR-11](#41-Functional-requirements), [NFR-01](#42-Measurable-non-functional-requirements), [A-07/A-09](#52-Proposed-assumptions)                               |
-| Q-08 | What should staff do when the internet is unavailable at markets, and how should transactions be checked and errors resolved when it returns? | Market Coordinator, Manager       | [NFR-05](#42-Measurable-non-functional-requirements), [A-08](#52-Proposed-assumptions)                                                           |
+| Q-08 | What should staff do when the internet is unavailable at markets, and how should transactions be checked and errors resolved when it returns? | Market Coordinator, Manager | [NFR-05](#42-Measurable-non-functional-requirements), [FR-13](#41-Functional-requirements), [A-08, A-10](#52-Proposed-assumptions) |
+| Q-09 | Who may resolve duplicate or conflicting offline records, and which transaction types may be recorded offline? | Manager, Market Coordinator | [FR-13](#41-Functional-requirements), [UC-10](#61-Catalogue), [A-08, A-10](#52-Proposed-assumptions) |
+
+### 5.6 Offline operation responsibilities
+
+This section separates what people do under an approved manual procedure during an internet outage from what the system does once connectivity returns. All entries are **proposed** (A-08, A-10) and depend on Q-08 and Q-09.
+
+| Step | Responsibility | Responsible role | Manual procedure or system | Evidence |
+|------|----------------|------------------|----------------------------|----------|
+| 1 | Declare an outage and start the offline procedure | Market Coordinator | Manual procedure | Start time noted on the offline form |
+| 2 | Record each sale on the approved offline form with a unique offline reference, date and time, items and prices | Market Coordinator | Manual procedure | Completed offline form |
+| 3 | Do not take new reservations, orders or commission changes while offline (A-10) | Market Coordinator | Manual procedure | Statement in the offline procedure |
+| 4 | Keep completed forms safe until they are reconciled | Market Coordinator | Manual procedure | Forms retained and counted |
+| 5 | Enter each form when connectivity returns; the system stores an OfflineTransaction with status "awaiting reconciliation" | Market Coordinator (data entry); system (storage) | System (UC-10) | OfflineTransaction record |
+| 6 | Check each record for a repeated offline reference and for items already sold, reserved or unavailable | System (detect); Market Coordinator (review) | System (UC-10) | Flag on the record |
+| 7 | Reconcile records without problems; the system records the Sale and SaleLines, updates availability and marks the record "reconciled" | Market Coordinator (confirm); system (apply) | System (UC-10) | Sale linked to the OfflineTransaction |
+| 8 | Mark duplicates and conflicts as "referred to manager"; no sale is recorded | System (mark) | System (UC-10) | Status and reason on the record |
+| 9 | Decide each referred record (accept, adjust, reject or follow up outside the system) and record the outcome as "resolved" | Manager | System (UC-10) plus Manager decision | Decision note on the record |
+| 10 | Handle any refund or payment correction outside the system (BR-05) | Manager; accounting support | Outside the system | Not recorded by the system |
+
+Reconciliation status moves from awaiting reconciliation to either reconciled, or referred to manager and then resolved. The Volunteer does not take part in the offline procedure unless the Manager assigns this (Q-09).
 
 ## 6. Use-case Model
 
@@ -239,6 +264,7 @@ The use-case diagram is provided in a separate PlantUML file: ``diagrams/use-cas
 | UC-07 | Review Marketplace Operations and Maker Evidence | Manager                                                            | [FR-10, FR-11, FR-12](#41-Functional-requirements) |
 | UC-08 | Maintain Own Product Records                     | Maker (proposed access assumption A-09)                            | [FR-01](#41-Functional-requirements)               |
 | UC-09 | Review Return Case                               | Manager                                                            | [FR-09](#41-Functional-requirements)               |
+| UC-10 | Reconcile Offline Transactions                   | Market Coordinator; Manager resolves referred records              | [FR-13, NFR-05](#41-Functional-requirements) |
 
 ### 6.2 Detailed use case: UC-02 Manage Reservation
 | Field                      | Value                                                                                                 |
@@ -273,6 +299,42 @@ The use-case diagram is provided in a separate PlantUML file: ``diagrams/use-cas
 
 **Business rules / assumptions:** A-01 and A-02 remain proposed.
 
+### 6.3 Detailed use case: UC-10 Reconcile Offline Transactions
+
+| Field                      | Value                                                                                                                                      |
+|----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|
+| **Primary actor**          | Market Coordinator.                                                                                                                        |
+| **Supporting actor**       | Manager, for duplicate or conflicting records.                                                                                             |
+| **Goal**                   | Bring sales captured during an internet outage into the system record without losing or double-counting any of them.                       |
+| **Trigger**                | Connectivity has returned and completed offline forms exist.                                                                               |
+| **Preconditions**          | Coordinator is authorised; each form has a unique offline reference; the system is available.                                              |
+| **Success postconditions** | Every entered offline transaction is either reconciled (Sale recorded, availability updated) or referred to the Manager with its reason.   |
+| **Failure postconditions** | No Sale is recorded for a rejected entry; records already entered remain "awaiting reconciliation".                                        |
+
+**Main success flow:**
+
+1. Coordinator selects an offline form to enter.
+2. Coordinator enters the offline reference, date, items and prices.
+3. System records an OfflineTransaction with status "awaiting reconciliation".
+4. System checks the offline reference for duplicates and each item against recorded sales, reservations and availability.
+5. System reports that no problem was found.
+6. Coordinator confirms reconciliation.
+7. System records the Sale and SaleLines attributed to their makers (BR-01), updates availability and marks the record "reconciled".
+8. Coordinator repeats for the remaining forms; the system shows how many records are still awaiting reconciliation.
+
+**A1 — Duplicate offline reference (from step 4):** System flags a possible duplicate, records no second Sale and marks the entry "referred to manager".
+
+**A2 — Item conflict (from step 4):** An item is already recorded as sold, or reserved for another customer. System records no Sale and marks the entry "referred to manager" with the reason.
+
+**A3 — Manager resolution (after A1 or A2):** Manager reviews the referred record, records a decision and a note, and the system marks it "resolved". Refunds or payment corrections are handled outside the system (BR-05).
+
+**E1 — Incomplete form data (from step 2):** System rejects the entry and identifies missing details. Coordinator corrects it from the form, or refers an unreadable form to the Manager.
+
+**E2 — Connectivity lost during entry:** Entries already stored remain "awaiting reconciliation" and are not counted as reconciled.
+
+**Business rules / assumptions:** BR-01, BR-05, A-08 and A-10 remain proposed (Q-08, Q-09). In an outage, the sale steps of UC-01 are carried out on the offline form; stock movements (UC-03) are entered later with their actual date.
+
+
 ## 7. User Stories, Acceptance Criteria and Gherkin
 
 ### 7.1 Story-to-test summary
@@ -285,11 +347,12 @@ The following table summarises the user stories, their expected value, related f
 | US-02 Track partial fulfilment             | Help staff identify which items are ready for collection             | [FR-06/07](#41-Functional-requirements), [UC-04](#61-Catalogue)                 | Update one order line without changing the fulfilment status of other lines                             | SC-04    (`marketplace.feature`)     |
 | US-03 Control commission changes           | Preserve agreed specifications and avoid misunderstandings           | [FR-08](#41-Functional-requirements), [UC-05](#61-Catalogue)                    | A proposed change does not replace the approved terms until it is accepted                              | SC-05 (`marketplace.feature`)        |
 | US-04 Record stock movements               | Maintain accurate stock availability                                 | [FR-02/03](#41-Functional-requirements), [UC-03](#61-Catalogue)                 | Record a stock movement and update the item's recorded location and availability                        | SC-06 (`marketplace.feature`)        |
-| US-05 Record customer sales                | Maintain reliable sales records for the cooperative                  | [FR-10](#41-Functional-requirements), [UC-01](#61-Catalogue)                 | Record a sale with the relevant items, quantities and selling prices                                    | SC-07  (`marketplace.feature`)       |
-| US-06 Protect maker-payment information    | Prevent unauthorised access to confidential financial information    | [NFR-01](#42-Measurable-non-functional-requirements), [UC-07](#61-Catalogue)    | Allow a volunteer to process a sale while denying access to confidential maker-payment summaries        | SC-08 (`marketplace.feature`)        |
-| US-07 Record return requests               | Ensure customer issues are documented and can be reviewed            | [FR-9](#41-Functional-requirements), [UC-06/09](#61-Catalogue)                 | Record a return request and allow the manager to review its outcome                                     | SC-09  (`marketplace.feature`)       |
+| US-05 Record customer sales                | Maintain reliable sales records for the cooperative                  | [FR-01, FR-10](#41-Functional-requirements), [UC-01](#61-Catalogue)             | Record a sale with the relevant items, quantities and selling prices                                    | SC-07 (`marketplace.feature`)        |
+| US-06 Protect maker-payment information    | Prevent unauthorised access to confidential financial information    | [FR-11, NFR-01](#42-Measurable-non-functional-requirements), [UC-07](#61-Catalogue) | Allow a volunteer to process a sale while denying access to confidential maker-payment summaries        | SC-08 (`marketplace.feature`)        |
+| US-07 Record return requests               | Ensure customer issues are documented and can be reviewed            | [FR-09](#41-Functional-requirements), [UC-06/09](#61-Catalogue)                 | Record a return request and allow the manager to review its outcome                                     | SC-09  (`marketplace.feature`)       |
 | US-08 Maintain product information         | Keep product descriptions and prices accurate                        | [FR-01](#41-Functional-requirements), [UC-08](#61-Catalogue)                    | Allow a maker to update their own product information without changing another maker's records          | SC-10 (`marketplace.feature`)        |
-| US-09 Record sales during internet outages | Allow market operations to continue when connectivity is unavailable | [NFR-05](#42-Measurable-non-functional-requirements), [UC-01/03](#61-Catalogue) | Record transactions using the documented offline procedure and reconcile them when connectivity returns | SC-11 (`marketplace.feature`)        |
+| US-09 Record sales during internet outages | Allow market operations to continue when connectivity is unavailable | [NFR-05, FR-13](#42-Measurable-non-functional-requirements), [UC-01/10](#61-Catalogue) | Record sales using the offline procedure; reconcile them; refer duplicates and conflicts to the Manager | SC-11/12/13/14/15 (`marketplace.feature`) |
+| US-10 Review open commitments              | Let the Manager follow up incomplete orders, reservations and commissions | [FR-12](#41-Functional-requirements), [UC-07](#61-Catalogue)                | Open records appear in the operational view; closed ones do not                                         | SC-16 (`marketplace.feature`)        |
 
 
 ### 7.2 Acceptance criteria and Gherkin
@@ -319,6 +382,8 @@ The user stories and Gherkin scenarios are provided in separate files:
 | Return/repair     | Different outcomes                         | Entity                  | Keep as ReturnCase                           | Tracks after-sales issue and outcome                                              |
 | Sale record       | Maker payments need evidence               | Entity                  | Keep as Sale and SaleLine                    | Sale groups a transaction; SaleLine records each sold product and its adjustments |
 | Discount          | Complicates reconciliation                 | Value/attribute         | Convert to SaleLine attribute                | Monetary adjustment rather than independent actor                                 |
+| Offline record    | Transactions recorded during internet outages | Entity                  | Keep as OfflineTransaction                   | Holds a sale and its reconciliation status until it is reconciled or referred     |
+| Market Coordinator | Moves event stock and records event transactions | Actor/Entity         | Keep as MarketCoordinator                    | Distinct role that processes event sales and enters offline transactions          |
 | Colour            | Products may differ in colour              | Attribute               | Convert to Product/StockItem attribute       | Describes an item, not a separate business party                                  |
 | Spreadsheet       | Current storage method                     | Implementation artefact | Remove                                       | Not a business concept in target domain                                           |
 | Payment gateway   | Online payment excluded                    | External technology     | Remove                                       | Out of scope                                                                      |
@@ -342,14 +407,16 @@ It is a **proposed modelling interpretation**, not an agreed identification poli
 | Reservation   | Recorded temporary commitment to hold a specific StockItem for a customer                                               |
 | Commission    | Record of agreed customised work, including specifications, target date, agreed price and approval status               |
 | ReturnCase    | Recorded return, repair or exchange request and outcome                                                                 |
-| Volunteer     | Cooperative volunteer who can process sales but must not access confidential maker-payment information                  |
+| Volunteer     | Cooperative volunteer who can process shop sales but must not access confidential maker-payment information                  |
 | Sale          | Record of a sales transaction, including its reference, date and status                                                 |
 | SaleLine      | Individual line within a sale, recording the product sold, quantity, sold price and relevant financial adjustments      |
+| MarketCoordinator | Staff member who moves event stock, processes event sales and enters and reconciles offline transactions               |
+| OfflineTransaction | Record of a sale captured on the approved offline form during an internet outage, held with a reconciliation status (awaiting reconciliation, reconciled, referred to manager, resolved) |
 
 ## 9. Conceptual Domain Model
 
 The Conceptual Domain Model is provided in the separate file ``diagrams/domain-model.puml``.
-It contains **14 conceptual classes**: Maker, Product, StockItem, Location, StockMovement, Customer, CustomerOrder, OrderLine, Reservation, Commission, ReturnCase, Volunteer, Sale and SaleLine. The diagram uses **selected attributes**, not every field a future implementation might store. Attributes are limited to those needed to explain the domain concepts and core requirements. There are no methods, controllers, repositories, UI controls, database foreign keys or navigability arrows.
+It contains **16 conceptual classes**: Maker, Product, StockItem, Location, StockMovement, Customer, CustomerOrder, OrderLine, Reservation, Commission, ReturnCase, Volunteer, MarketCoordinator, Sale, SaleLine and OfflineTransaction. The diagram uses **selected attributes**, not every field a future implementation might store. Attributes are limited to those needed to explain the domain concepts and core requirements. There are no methods, controllers, repositories, UI controls, database foreign keys or navigability arrows.
 
 ### 9.1 Key association rationale
 
@@ -362,25 +429,34 @@ It contains **14 conceptual classes**: Maker, Product, StockItem, Location, Stoc
 - One Customer may request many Reservations; a Reservation holds one StockItem. Whether sequential historical reservations are retained is proposed; conflicting **active** reservations are not permitted under the sample acceptance criteria.
 - A Commission is linked to one OrderLine in this simplified model; not every OrderLine is commissioned.
 - A ReturnCase may relate to a SaleLine; a SaleLine can have multiple after-sales cases over time in this proposed model.
-- Each Sale contains one or more SaleLines; each SaleLine refers to one Product and is processed by one Volunteer. A Sale may be associated with a Customer if the sale is linked to a known customer; anonymous walk-in sales should be allowed if that matches the cooperative's process.
+- Each Sale contains one or more SaleLines; each SaleLine refers to one Product. A Sale is processed by one Volunteer (shop sale) or one Market Coordinator (event sale or reconciled offline sale); this either-or rule cannot be shown by multiplicities alone. A Sale may be associated with a Customer if the sale is linked to a known customer; anonymous walk-in sales should be allowed if that matches the cooperative's process.
 - A SaleLine may fulfil part of an OrderLine, and one OrderLine may be fulfilled through multiple SaleLines. A SaleLine may be linked to zero or one OrderLine for walk-in sales.
 - A ReturnCase relates to a SaleLine. The exact deposit/refund evidence and accounting treatment remain Q-06.
+- One Market Coordinator records zero or many OfflineTransactions; each OfflineTransaction lists one or more StockItems and has a reconciliation status.
+- An OfflineTransaction becomes at most one Sale when it is reconciled; duplicates and conflicts are referred to the Manager and produce no Sale. The Manager's decision is held as a resolution note on the OfflineTransaction.
 
 ### 9.2 Decision Log
 
-| ID   | Decision                                                                                                             | Evidence / rationale                                                                                                                                        | Status                                                               |
-|------|----------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|
-| D-01 | Separate Product design from physical StockItem                                                                      | One-off pieces can differ in finish; individual stock movements must be tracked                                                                             | Proposed; confirm item-identification policy through Q-02            |
-| D-02 | Keep fulfilment status on each OrderLine                                                                             | Orders involving multiple makers can be partially fulfilled                                                                                                 | Supported modelling choice                                           |
-| D-03 | Allow Makers to maintain their own product records through restricted internal access                                | Makers provide product descriptions, materials, dimensions, prices, photographs and care information; direct system access is not confirmed in the scenario | Proposed assumption A-09; confirm through Q-07                       |
-| D-04 | Record proposed commission changes separately from approved terms                                                    | Messages can create uncertainty about agreed specifications, prices and completion dates                                                                    | Proposed; confirm approval rules through Q-04                        |
-| D-05 | Do not hard-code a universal three-day reservation expiry                                                            | The scenario does not specify an approved reservation duration                                                                                              | Open; Q-01                                                           |
-| D-06 | Restrict Makers to their own product records and keep confidential maker-payment summaries unavailable to Volunteers | Supports product-data responsibility while preserving the stated volunteer privacy constraint                                                               | Proposed; confirm role permissions through Q-07                      |
-| D-07 | Separate Sale from SaleLine                                                                                          | A sale can contain multiple sold items; each line needs its own price and financial adjustments                                                             | Proposed modelling choice; confirm transaction evidence through Q-06 |
+This table mirrors `decisions/decision-log.md`, which is the authoritative record.
+
+| ID   | Decision | Evidence / rationale | Status |
+|------|----------|----------------------|--------|
+| D-01 | Separate Product design from physical StockItem | One-off pieces can differ in finish; individual stock movements must be tracked | Proposed; confirm item-identification policy through Q-02 |
+| D-02 | Keep fulfilment status on each OrderLine | Orders involving multiple makers can be partially fulfilled | Supported modelling choice |
+| D-03 | Allow Makers to maintain only their own product records through restricted internal access | Makers provide descriptions, materials, dimensions, prices and care information; direct system access is not confirmed in the scenario | Proposed assumption A-09; confirm through Q-07 |
+| D-04 | Record proposed commission changes separately from approved terms | Separate messages create uncertainty about agreed specifications, prices and dates | Proposed; confirm approval rules through Q-04 |
+| D-05 | Do not hard-code a universal three-day reservation expiry | The scenario does not specify an approved reservation duration | Open; Q-01 |
+| D-06 | Keep confidential maker-payment summaries unavailable to Volunteers | Preserves the stated volunteer privacy constraint (BR-04) | Proposed; confirm role permissions through Q-07 |
+| D-07 | Separate Sale from SaleLine | A sale can contain several items; each line needs its own price and financial adjustments | Proposed modelling choice; confirm transaction evidence through Q-06 |
+| D-08 | Keep Customer as an offstage stakeholder initially | No confirmed direct customer access to the system | Proposed; Q-07 |
+| D-09 | Record return requests separately from the Manager's decision on their outcome | Return, exchange and repair practices vary and the approval policy is unresolved | Proposed; Q-05 |
+| D-10 | Capture offline sales by an approved manual procedure and reconcile them in the system (FR-13, UC-10) | Internet access at markets may be unreliable; NFR-05 needs later reconciliation without unaccounted transactions | Proposed; confirm through Q-08, Q-09 |
+| D-11 | Represent each offline sale as an OfflineTransaction with a reconciliation status | Keeps unreconciled records separate from confirmed Sales and makes duplicates and conflicts visible | Proposed; Q-08 |
+| D-12 | Do not take new reservations, orders or commission changes while offline (A-10) | Avoids double commitment while the system is unavailable | Proposed; Q-09 |
 
 ## 10. Traceability Matrix
 
-The traceability matrix is provided in the separate file `requirements/traceability.csv`.
+The traceability matrix is provided in the separate file `requirements/traceability.csv`. Each row has a Trace ID and links problems, stakeholders, requirements, rules and assumptions, use cases, stories, Gherkin scenarios, domain concepts, risks and questions. The final column states whether a row is verified by Gherkin or by a non-functional test in CA3. BR-05 is a scope constraint and is not traced to a use case.
 
 ## 11. AI Declaration
 
