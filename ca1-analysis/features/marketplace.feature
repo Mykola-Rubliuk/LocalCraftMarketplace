@@ -49,7 +49,7 @@ Feature: Marketplace commitments and order records
       Then the agreed price remains 80 euro
       And the proposed change is marked as awaiting approval
 
-        Rule: Stock movements must be recorded consistently
+  Rule: Stock movements must be recorded consistently
 
     @SC-06
     Scenario: Record an item movement to the shop
@@ -102,5 +102,51 @@ Feature: Marketplace commitments and order records
       Given internet access is unavailable at the market
       And the documented offline recording procedure is available
       When the market coordinator records a transaction using that procedure
-      Then the transaction details are recorded for later reconciliation
+      Then the transaction details and a unique offline reference are recorded for later reconciliation
       And the transaction is identified as awaiting reconciliation
+
+  Rule: Offline transactions are reconciled when connectivity returns
+
+    @SC-12
+    Scenario: Reconcile an offline transaction without conflicts
+      Given offline transaction "OFF-03" for stock item "CER-103" is awaiting reconciliation
+      And no conflicting sale or reservation exists for "CER-103"
+      When the market coordinator reconciles "OFF-03"
+      Then a sale for "CER-103" is recorded from "OFF-03"
+      And stock item "CER-103" is no longer shown as available
+      And "OFF-03" is recorded as reconciled
+
+    @SC-13
+    Scenario: Refer a duplicate offline transaction
+      Given offline transaction "OFF-03" has already been reconciled
+      When the market coordinator enters offline reference "OFF-03" again
+      Then the entry is flagged as a possible duplicate
+      And no second sale is recorded
+      And the entry is recorded as referred to the manager
+
+    @SC-14
+    Scenario: Refer an offline transaction that conflicts with existing records
+      Given stock item "CER-105" is already recorded as sold in the system
+      And offline transaction "OFF-04" for "CER-105" is awaiting reconciliation
+      When the market coordinator reconciles "OFF-04"
+      Then "OFF-04" is recorded as referred to the manager
+      And no additional sale is recorded for "CER-105"
+
+    @SC-15
+    Scenario: Manager resolves a referred offline transaction
+      Given offline transaction "OFF-04" is referred to the manager
+      When the manager records the decision "rejected" with the note "item already sold in the shop"
+      Then "OFF-04" is recorded as resolved with the decision and note
+      And no sale is recorded from "OFF-04"
+
+  Rule: Managers can review incomplete orders, reservations and commissions
+
+    @SC-16
+    Scenario: View open orders, reservations and commissions
+      Given order "ORD-20" has a line that is not yet collected
+      And stock item "CER-101" has an active reservation
+      And commission "COM-9" is awaiting approval
+      And order "ORD-21" is fully collected
+      When the manager requests the operational view
+      Then order "ORD-20", the reservation for "CER-101" and commission "COM-9" are listed
+      And order "ORD-21" is not listed

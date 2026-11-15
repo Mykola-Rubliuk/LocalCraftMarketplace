@@ -27,31 +27,36 @@ Public e-commerce and online payment processing are outside the current scope.
 ```text
 ca1-analysis
 ├── README.md
-├── report/
-│   ├── analysis_dossier.md
-├── requirements/
-│   ├── user-stories.md
-│   └── traceability.csv
+├── CHANGELOG.md
+├── decisions/
+│   └── decision-log.md
+├── diagrams/
+│   ├── domain-model.puml
+│   └── use-case-model.puml
 ├── features/
 │   └── marketplace.feature
-└── diagrams/
-    ├── use-case-model.puml
-    └── domain-model.puml
+├── references/
+│   └── source.md
+├── report/
+│   └── analysis_dossier.md
+└── requirements/
+    ├── backlog.md
+    └── traceability.csv
 ```
 
 ## Main Artefacts
 
 - **Requirements report:** Documents the scenario interpretation, project scope, stakeholders, functional and non-functional requirements, business rules, analysis and reflection.
-- **User stories:** Describe stakeholder needs and expected value.
+- **User stories:** `requirements/backlog.md` describes stakeholder needs, expected value and acceptance criteria.
 - **Gherkin scenarios:** Specify observable system behaviour using Given, When and Then.
 - **Use-case model:** Illustrates interactions between system actors and use cases.
 - **Domain model:** Defines the main domain concepts and their relationships.
 - **Traceability matrix:** Links evidence, requirements and expected behaviour.
-- **Decision Log:** Records proposed design decisions, their rationale and unresolved questions.
+- **Decision Log:** `decisions/decision-log.md` is the authoritative record of proposed design decisions, their rationale and unresolved questions; section 9.2 of the report mirrors it.
 
 ## Design Assumptions
 
-Some design decisions remain provisional because the original scenario does not define every operational policy. These include reservation expiry, direct Maker access, commission change approval and the handling of offline transactions.
+Some design decisions remain provisional because the original scenario does not define every operational policy. These include reservation expiry, direct Maker access, commission change approval and the handling of offline transactions (who records, reconciles and resolves them; see section 5.6 of the report).
 
 Proposed decisions and unresolved questions are documented in the project report and Decision Log.
 
