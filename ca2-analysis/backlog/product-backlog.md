@@ -8,7 +8,7 @@
 | PB-03 | Design | UC-01 Process a customer sale (Slice 4) | Must | Slice 4 owner | Use case, Gherkin, SSD, contracts, CRC/GRASP, sequence reviewed | In Progress |
 | PB-04 | Design | UC-02 Reserve an item (Slice 1) | Must | Slice 1 owner  | Same artefact set; expiry policy assumption explicit | In Progress |
 | PB-05 | Design | UC-04 Fulfil order lines (Slice 2) | Must | Slice 2 owner | Same artefact set; approval evidence handled | In Progress |
-| PB-06 | Design / risk | UC-10 Reconcile offline transactions (Slice 3) | Must, pending scope | Slice 3 owner  | Clean, duplicate, conflict and manager-resolution paths | Blocked pending baseline |
+| PB-06 | Design / risk | UC-10 Reconcile offline transactions (Slice 3) | Must, pending scope | Slice 3 owner | Clean, duplicate, conflict and manager-resolution paths; design in `slices/slice-3/offline-reconciliation-design.md` | In Progress (scope pending PB-01) |
 | PB-07 | Integration | Build integrated design class model and check message-operation mapping | Must | Group integration owner | One coherent class model matching all sequences | Backlog |
 | PB-08 | Enabler | Produce package/layer view and interface/error catalogue | Should | Group  | Dependencies point inward to domain/application abstractions | Backlog |
 | PB-09 | Quality | Complete cross-slice traceability | Must | Group | Every selected UC has a complete chain | Backlog |
