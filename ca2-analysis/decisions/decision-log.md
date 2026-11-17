@@ -12,4 +12,4 @@
 | D-CA2-08 | Slice fakes implement the shared port contracts | Each fake behaves independently | Enables consistent slice tests before integration | Proposed |
 
 ## Decision status vocabulary
-Draft = suggested; Accepted = explicitly agreed by group; Rejected = group declined; Superseded = replaced by a later decision.
+Draft = suggested; Accepted = explicitly agreed by group; Rejected = group declined; Superseded = replaced by a later decision. Add date and participants when decisions are actually made.
