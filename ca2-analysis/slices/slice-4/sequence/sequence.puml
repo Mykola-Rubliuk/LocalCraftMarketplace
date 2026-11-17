@@ -1,0 +1,40 @@
+@startuml
+title UC-01 Process a customer sale — object interaction
+actor Volunteer
+participant SaleService
+participant ProductCatalogue as Catalogue
+participant StockAvailabilityPort as Stock
+participant SaleRepository as Repo
+participant Clock
+entity Sale
+entity SaleLine
+
+Volunteer -> SaleService: recordSale(processedBy, customerRef, lines)
+SaleService -> SaleService: validateRequest()
+loop each requested line
+  SaleService -> Catalogue: findItem(itemCode)
+  Catalogue --> SaleService: product + maker attribution
+  SaleService -> Stock: getStatus(itemCode)
+  Stock --> SaleService: Available
+end
+SaleService -> Clock: now()
+Clock --> SaleService: saleDate
+create Sale
+SaleService -> Sale: create(processor, customerRef, saleDate)
+loop each valid line
+  create SaleLine
+  SaleService -> SaleLine: create(item, maker, price, quantity, discount)
+  Sale -> SaleLine: addLine(line)
+end
+SaleService -> Repo: saveAtomically(sale, stockChanges)
+Repo --> SaleService: committed(saleRef)
+SaleService --> Volunteer: SaleRecorded(saleRef)
+
+alt any line invalid or unavailable
+  SaleService --> Volunteer: SaleRejected(reason)
+  note over SaleService,Stock
+    No Sale/SaleLine persists.
+    No stock item changes.
+  end note
+end
+@enduml
