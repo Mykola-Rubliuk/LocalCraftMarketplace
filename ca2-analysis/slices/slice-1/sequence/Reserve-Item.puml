@@ -1,0 +1,53 @@
+@startuml
+
+title UC-02 Reserve an item — object interaction
+
+actor Volunteer
+participant ReservationService
+participant StockAvailabilityPort as Stock
+participant ReservationRepository as Repo
+participant ReservationPolicy as Policy
+participant Clock
+entity Reservation
+
+Volunteer -> ReservationService: recordReservation(itemCode, customerRef, conditions)
+ReservationService -> ReservationService: validateRequest()
+
+ReservationService -> Stock: getStatus(itemCode)
+Stock --> ReservationService: Available
+
+ReservationService -> Repo: findActiveByItemCode(itemCode)
+Repo --> ReservationService: no active reservation
+
+ReservationService -> Clock: now()
+Clock --> ReservationService: currentDate
+
+ReservationService -> Policy: calculateExpiry(currentDate)
+Policy -> Clock: workingDaysBetween(currentDate, expiry)
+Clock --> Policy: workingDays
+Policy --> ReservationService: agreedExpiry
+
+create Reservation
+ReservationService -> Reservation: create(itemCode, customerRef, conditions, agreedExpiry)
+Reservation --> ReservationService: Active reservation
+
+ReservationService -> Repo: save(reservation)
+Repo --> ReservationService: saved(reservationId)
+
+ReservationService -> Stock: markReserved(itemCode)
+Stock --> ReservationService: Reserved
+
+ReservationService --> Volunteer: ReservationConfirmed(reservationId, agreedExpiry)
+
+alt item unavailable
+  ReservationService --> Volunteer: Rejected(ItemUnavailable)
+else conflicting reservation
+  ReservationService --> Volunteer: Rejected(ConflictingReservation)
+else missing details
+  ReservationService --> Volunteer: Rejected(MissingDetails)
+else item not found
+  Stock --> ReservationService: ItemNotFound
+  ReservationService --> Volunteer: Rejected(ItemNotFound)
+end
+
+@enduml
