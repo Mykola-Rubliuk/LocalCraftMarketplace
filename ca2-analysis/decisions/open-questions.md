@@ -12,3 +12,7 @@
 | Q-SH-02 | Is reconciliation idempotent if a user retries after a timeout? | Slice 3 / Slice 4 |
 | Q-SH-03 | Which working-day calendar does Clock use? | Slice 1 |
 | Q-SH-04 | What does quantity mean when stock is represented by individual item codes? | Slice 4 |
+| Q-SH-05 | Should reconcile and resolve select a record by offline reference or by internal entryId when the reference is repeated? | Slice 3 |
+| Q-SH-06 | Does SaleRecordingPort accept a past sale date, the offline form price and an idempotency key? | Slice 3 / Slice 4 |
+| Q-SH-07 | Does any active reservation make an offline sale a conflict? | Slice 3 / shared stock port |
+| Q-SH-08 | Is UC-10 confirmed as in CA2 scope? | Slice 3 / PB-01 |

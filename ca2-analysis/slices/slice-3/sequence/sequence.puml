@@ -1,0 +1,33 @@
+@startuml
+title Sequence — reconcile(offlineRef)
+actor "Market Coordinator" as C
+participant ":OfflineReconciliationService" as Svc
+participant ":OfflineTransactionRepository" as Repo
+participant ":ConflictChecker" as Chk
+participant ":StockAvailabilityPort" as Stock
+participant ":SaleRecordingPort" as Sales
+participant "tx:OfflineTransaction" as Tx
+
+C -> Svc : reconcile(offlineRef)
+Svc -> Svc : requireRole(MarketCoordinator)
+Svc -> Repo : findByRefAndStatus(offlineRef, AwaitingReconciliation)
+Repo --> Svc : tx
+Svc -> Chk : check(tx)
+Chk -> Repo : existsOtherWithRef(offlineRef, tx.entryId)
+loop each line
+  Chk -> Stock : availabilityOf(itemCode)
+end
+Chk --> Svc : clean | reason
+alt clean
+  Svc -> Sales : recordSale(entryId, saleDate, coordinator, offlineRef, lines)
+  alt Recorded(saleId)
+    Svc -> Tx : markReconciled(saleId)
+  else Rejected(reason)
+    Svc -> Tx : refer(SaleRejected)
+  end
+else duplicate or conflict
+  Svc -> Tx : refer(reason)
+end
+Svc -> Repo : save(tx)
+Svc --> C : status
+@enduml
