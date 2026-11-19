@@ -1,0 +1,364 @@
+@startuml
+ title Integrated Design Class Diagram — Local Craft Marketplace (Slices 1, 3 and 4)
+ left to right direction
+ skinparam packageStyle rectangle
+ skinparam classAttributeIconSize 0
+ skinparam shadowing false
+ skinparam linetype ortho
+ hide empty members
+
+' ============================================================
+' SHARED CONTRACTS — the only cross-slice integration points
+' ============================================================
+ package "Shared Contracts" as Shared {
+   interface StockAvailabilityPort <<shared port>> {
+     +getStatus(itemCode: String): StockStatus
+     +reserveIfAvailable(itemCode: String): StockOperationResult
+     +sellAllIfAvailable(stockLines: List<StockLine>, idempotencyKey: String): StockOperationResult
+     +releaseIfReserved(itemCode: String): StockOperationResult
+   }
+
+   interface SaleRecordingPort <<provided by Slice 4>> {
+     +recordSale(request: SaleRequest): SaleRecordingResult
+   }
+
+   interface Clock <<shared port>> {
+     +now(): DateTime
+   }
+
+   enum StockStatus {
+     Available
+     Reserved
+     Sold
+     Unknown
+   }
+
+   class StockLine <<value object>> {
+     +itemCode: String
+     +quantity: Integer
+   }
+
+   abstract class StockOperationResult <<result shape>>
+   class StockUpdated {
+     +status: StockStatus
+   }
+   class StockRejected {
+     +reason: String
+     +itemCode: String?
+   }
+
+   class SaleRequest <<request DTO>> {
+     +idempotencyKey: String
+     +processedBy: String
+     +channel: SaleChannel
+     +customerRef: String?
+     +saleDate: Date?
+     +sourceRef: String?
+   }
+
+   class SaleRequestLine <<request DTO>> {
+     +itemCode: String
+     +quantity: Integer
+     +soldPrice: Money
+     +discountAmount: Money?
+   }
+
+   enum SaleChannel {
+     InStore
+     OfflineMarket
+   }
+
+   abstract class SaleRecordingResult <<business result>>
+   class Recorded {
+     +saleRef: String
+   }
+   class Rejected {
+     +reason: String
+   }
+ }
+
+' ============================================================
+' SLICE 1 — RESERVATION
+' ============================================================
+ package "Slice 1 — Manage Reservation (UC-02)" as S1 {
+   class ReservationService <<controller>> {
+     +recordReservation(itemCode: String, customerRef: String, conditions: ReservationConditions): ReservationResult
+     +evaluateExpiry(asOf: DateTime): List<Reservation>
+     -validateRequest(): ValidationResult
+     -keepActive(): void
+   }
+
+   class Reservation <<entity>> {
+     +reservationId: String
+     +itemCode: String
+     +customerRef: String
+     +conditions: ReservationConditions
+     +status: ReservationStatus
+     +agreedExpiry: DateTime
+     +create(itemCode: String, customerRef: String, conditions: ReservationConditions, agreedExpiry: DateTime): Reservation
+     +getAgreedExpiry(): DateTime
+     +expire(): void
+   }
+
+   class ReservationRepository <<repository>> {
+     +findActiveByItemCode(itemCode: String): Reservation?
+     +findAllActive(): List<Reservation>
+     +save(reservation: Reservation): String
+     +update(reservation: Reservation): void
+   }
+
+   class ReservationPolicy <<domain policy>> {
+     +calculateExpiry(currentDateTime: DateTime): DateTime
+   }
+
+   class ReservationConditions <<value object>>
+
+   enum ReservationStatus {
+     Active
+     Expired
+   }
+
+   abstract class ReservationResult <<result abstraction>>
+   class ReservationConfirmed {
+     +reservationId: String
+     +agreedExpiry: DateTime
+   }
+   class ReservationRejected {
+     +reason: String
+   }
+   class ReservationTechnicalFailure {
+     +reason: String
+   }
+   class ValidationResult <<validation result>>
+ }
+
+' ============================================================
+' SLICE 3 — OFFLINE RECONCILIATION
+' ============================================================
+ package "Slice 3 — Reconcile Offline Transactions (UC-10, proposed)" as S3 {
+   class OfflineReconciliationService <<controller>> {
+     +enterOfflineTransaction(submissionId: String, offlineRef: String, saleDate: Date, processedBy: String, lines: List<OfflineLine>): OfflineTransaction
+     +reconcile(entryId: String): OfflineTransaction
+     +resolve(entryId: String, decision: String, note: String): OfflineTransaction
+     -requireCoordinatorRole(): void
+     -requireManagerRole(): void
+   }
+
+   class OfflineTransaction <<entity>> {
+     +entryId: String
+     +submissionId: String
+     +offlineRef: String
+     +saleDate: Date
+     +processedBy: String
+     +recordedAt: DateTime
+     +status: OfflineTransactionStatus
+     +referralReason: ReferralReason?
+     +saleRef: String?
+     +create(submissionId: String, offlineRef: String, saleDate: Date, processedBy: String, recordedAt: DateTime, lines: List<OfflineLine>): OfflineTransaction
+     +markReconciled(saleRef: String): void
+     +refer(reason: ReferralReason, detail: String?): void
+     +resolve(decision: String, note: String, resolvedBy: String, resolvedAt: DateTime): void
+   }
+
+   class OfflineLine <<entity>> {
+     +itemCode: String
+     +quantity: Integer
+     +soldPrice: Money
+   }
+
+   class ConflictChecker <<domain service>> {
+     +check(transaction: OfflineTransaction): ReferralReason?
+   }
+
+   class OfflineTransactionRepository <<repository>> {
+     +findByEntryId(entryId: String): OfflineTransaction?
+     +findBySubmissionId(submissionId: String): OfflineTransaction?
+     +existsOtherWithRef(offlineRef: String, entryId: String): Boolean
+     +save(transaction: OfflineTransaction): void
+     +countByStatus(status: OfflineTransactionStatus): Integer
+   }
+
+   enum OfflineTransactionStatus {
+     AwaitingReconciliation
+     Reconciled
+     ReferredToManager
+     Resolved
+   }
+
+   enum ReferralReason {
+     DuplicateReference
+     ItemAlreadySold
+     ItemReserved
+     ItemUnknown
+     SaleRejected
+   }
+
+ }
+
+' ============================================================
+' SLICE 4 — CUSTOMER SALE
+' ============================================================
+ package "Slice 4 — Process Customer Sale (UC-01)" as S4 {
+   class SaleService <<controller / port provider>> {
+     +recordSale(request: SaleRequest): SaleRecordingResult
+     -validateRequestAndIdempotency(): ValidationResult
+   }
+
+   class ProductCatalogue <<catalogue>> {
+     +findItem(itemCode: String): CatalogueItemDetails?
+   }
+
+   class CatalogueItemDetails <<lookup result>> {
+     +itemCode: String
+   }
+
+   class Product <<entity>> {
+     +productId: String
+     +description: String
+     +basePrice: Money
+   }
+
+   class Maker <<entity>> {
+     +makerId: String
+     +name: String
+   }
+
+   class SaleRepository <<repository>> {
+     +findResultByIdempotencyKey(key: String): SaleRecordingResult?
+     +persist(sale: Sale, idempotencyKey: String): PersistenceResult
+   }
+
+   class Sale <<entity / aggregate root>> {
+     +saleRef: String
+     +processedBy: String
+     +customerRef: String?
+     +channel: SaleChannel
+     +saleDate: Date
+     +recordedAt: DateTime
+     +status: SaleStatus
+     +create(request: SaleRequest, recordedAt: DateTime): Sale
+     +addLine(line: SaleLine): void
+     +calculateTotal(): Money
+   }
+
+   class SaleLine <<entity>> {
+     +itemCode: String
+     +soldPrice: Money
+     +quantity: Integer
+     +discountAmount: Money?
+     +create(item: CatalogueItemDetails, maker: Maker, soldPrice: Money, quantity: Integer, discountAmount: Money?): SaleLine
+     +calculateNetAmount(): Money
+   }
+
+   enum SaleStatus {
+     Completed
+   }
+
+   class PersistenceResult <<technical result>>
+ }
+
+' ============================================================
+' SHARED CONTRACT REALISATIONS AND CONSUMER DEPENDENCIES
+' ============================================================
+ SaleService ..|> SaleRecordingPort : implements
+
+ ReservationService ..> StockAvailabilityPort : uses
+ ReservationService ..> Clock : uses
+ ReservationService --> ReservationRepository : coordinates
+ ReservationService --> ReservationPolicy : asks expiry
+ ReservationService --> Reservation : creates / updates
+ ReservationPolicy ..> Clock : uses current time
+ ReservationRepository --> Reservation : stores
+
+ OfflineReconciliationService ..> StockAvailabilityPort : indirect use via ConflictChecker
+ OfflineReconciliationService ..> SaleRecordingPort : submits complete SaleRequest
+ OfflineReconciliationService ..> Clock : timestamps records
+ OfflineReconciliationService --> OfflineTransactionRepository : stores / retrieves
+ OfflineReconciliationService --> ConflictChecker : asks for conflict check
+ OfflineReconciliationService --> OfflineTransaction : creates / changes state
+ ConflictChecker ..> StockAvailabilityPort : getStatus only
+ ConflictChecker --> OfflineTransactionRepository : checks duplicate offlineRef
+ OfflineTransaction "1" *-- "1..*" OfflineLine : contains
+
+ SaleService ..> StockAvailabilityPort : validates and sells stock
+ SaleService ..> StockLine : maps stock batch request
+ SaleService ..> Clock : recordedAt / default saleDate
+ SaleService --> ProductCatalogue : resolves item and maker
+ SaleService --> SaleRepository : reads idempotency / persists
+ SaleService --> Sale : creates
+ Sale "1" *-- "1..*" SaleLine : contains
+ ProductCatalogue ..> CatalogueItemDetails : returns
+ CatalogueItemDetails --> Product : identifies
+ CatalogueItemDetails --> Maker : identifies
+ SaleLine --> Product : product details
+ SaleLine --> Maker : maker attribution
+
+ SaleRequest "1" *-- "1..*" SaleRequestLine : lines
+ ReservationResult <|-- ReservationConfirmed
+ ReservationResult <|-- ReservationRejected
+ ReservationResult <|-- ReservationTechnicalFailure
+ SaleRecordingResult <|-- Recorded
+ SaleRecordingResult <|-- Rejected
+ StockOperationResult <|-- StockUpdated
+ StockOperationResult <|-- StockRejected
+
+' ============================================================
+' CONTRACT NOTES / EXPLICIT BOUNDARIES
+' ============================================================
+ note right of StockAvailabilityPort
+   Shared stock vocabulary:
+   Available | Reserved | Sold | Unknown
+
+   Slice 1: getStatus, reserveIfAvailable,
+   releaseIfReserved.
+   Slice 3: getStatus only (read-only).
+   Slice 4: getStatus and sellAllIfAvailable.
+
+   Slice 3 never changes stock directly.
+ end note
+
+ note bottom of SaleRecordingPort
+   Slice 3 passes:
+   idempotencyKey = entryId
+   channel = OfflineMarket
+   saleDate = offline form date
+   sourceRef = offlineRef
+
+   Recorded(saleRef) is the only result
+   that allows Slice 3 to mark an entry
+   as Reconciled. Rejected(reason) means
+   refer to Manager; technical failure
+   leaves AwaitingReconciliation.
+ end note
+
+ note bottom of SaleRepository
+   Sale persistence and stock changes must
+   be consistent / all-or-nothing.
+   The cross-store transaction or safe
+   compensation mechanism is still an
+   unresolved implementation decision.
+ end note
+
+ note bottom of Clock
+   The Clock implementation is not assigned
+   to a slice in the current contracts.
+   Working-day expiry rules belong to
+   ReservationPolicy, not Clock.
+ end note
+
+ note bottom of S3
+   UC-10 / Slice 3 is proposed and remains
+   subject to PB-01 / Q-SH-08 confirmation.
+ end note
+
+ legend bottom
+   |= Notation |= Meaning |
+   | Solid association | Collaborator / owned model relationship |
+   | Dashed dependency | Uses a shared contract or service |
+   | Realisation | Class provides an interface |
+   | Composition | Aggregate owns contained lines |
+   Result wrapper classes and CatalogueItemDetails are design-level UML types
+   used to make documented return values and lookup data explicit; confirm
+   their final names during group contract review.
+ endlegend
+@enduml
