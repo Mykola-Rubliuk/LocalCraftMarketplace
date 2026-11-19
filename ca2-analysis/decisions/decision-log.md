@@ -16,5 +16,14 @@
 | D-CA2-12 | Use entryId as idempotency key for recordSale and submissionId for idempotent entry | No idempotency; rely on status checks only | Retries after a timeout must not create a second sale or a false duplicate (Q-SH-02) | Proposed; needs Slice 4 agreement |
 | D-CA2-13 | resolve records the Manager's decision and note only; it does not record a sale | Accepted decision posts the sale | SC-15 and BR-05: corrections happen outside the system | Proposed; confirm through Q-08 |
 
+## Shared contract conventions proposed for review
+
+- Stock status values: `Available`, `Reserved`, `Sold`, `Unknown`.
+- Sale result: `Recorded(saleRef)` or `Rejected(reason)`.
+- Sale request: stable `idempotencyKey`, processor, channel, optional customer reference, sale date where required, optional source reference and all sale lines.
+- Slice 3 uses `entryId` as idempotency key, `OfflineMarket` as channel, form date as `saleDate` and `offlineRef` as `sourceRef`.
+- Slice 3 reads stock but does not mutate stock or create Sale/SaleLine.
+- Slice 4 is the only provider of SaleRecordingPort and owns sale recording and stock updates.
+
 ## Decision status vocabulary
 Draft = suggested; Accepted = explicitly agreed by group; Rejected = group declined; Superseded = replaced by a later decision. Add date and participants when decisions are actually made.
