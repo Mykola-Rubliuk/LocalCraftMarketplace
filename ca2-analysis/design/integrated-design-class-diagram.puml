@@ -257,9 +257,7 @@
    class PersistenceResult <<technical result>>
  }
 
-' ============================================================
-' SHARED CONTRACT REALISATIONS AND CONSUMER DEPENDENCIES
-' ============================================================
+
  SaleService ..|> SaleRecordingPort : implements
 
  ReservationService ..> StockAvailabilityPort : uses
@@ -301,64 +299,3 @@
  SaleRecordingResult <|-- Rejected
  StockOperationResult <|-- StockUpdated
  StockOperationResult <|-- StockRejected
-
-' ============================================================
-' CONTRACT NOTES / EXPLICIT BOUNDARIES
-' ============================================================
- note right of StockAvailabilityPort
-   Shared stock vocabulary:
-   Available | Reserved | Sold | Unknown
-
-   Slice 1: getStatus, reserveIfAvailable,
-   releaseIfReserved.
-   Slice 3: getStatus only (read-only).
-   Slice 4: getStatus and sellAllIfAvailable.
-
-   Slice 3 never changes stock directly.
- end note
-
- note bottom of SaleRecordingPort
-   Slice 3 passes:
-   idempotencyKey = entryId
-   channel = OfflineMarket
-   saleDate = offline form date
-   sourceRef = offlineRef
-
-   Recorded(saleRef) is the only result
-   that allows Slice 3 to mark an entry
-   as Reconciled. Rejected(reason) means
-   refer to Manager; technical failure
-   leaves AwaitingReconciliation.
- end note
-
- note bottom of SaleRepository
-   Sale persistence and stock changes must
-   be consistent / all-or-nothing.
-   The cross-store transaction or safe
-   compensation mechanism is still an
-   unresolved implementation decision.
- end note
-
- note bottom of Clock
-   The Clock implementation is not assigned
-   to a slice in the current contracts.
-   Working-day expiry rules belong to
-   ReservationPolicy, not Clock.
- end note
-
- note bottom of S3
-   UC-10 / Slice 3 is proposed and remains
-   subject to PB-01 / Q-SH-08 confirmation.
- end note
-
- legend bottom
-   |= Notation |= Meaning |
-   | Solid association | Collaborator / owned model relationship |
-   | Dashed dependency | Uses a shared contract or service |
-   | Realisation | Class provides an interface |
-   | Composition | Aggregate owns contained lines |
-   Result wrapper classes and CatalogueItemDetails are design-level UML types
-   used to make documented return values and lookup data explicit; confirm
-   their final names during group contract review.
- endlegend
-@enduml
