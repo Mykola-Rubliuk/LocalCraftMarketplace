@@ -1,25 +1,64 @@
-# Slice 4 — CRC cards
+# Slice 4 — CRC Cards
 
 ## SaleService
-**Responsibilities:** receive sale request; validate processor and lines; resolve product/maker details; check availability; coordinate atomic creation of sale and sale lines; update stock; return explicit result; implement SaleRecordingPort.  
-**Collaborators:** Sale, SaleLine, SaleRepository, StockAvailabilityPort, ProductCatalogue, Clock.
+
+**Responsibilities**
+- Implement `SaleRecordingPort.recordSale(SaleRequest)`.
+- Validate request identity, processor and sale lines.
+- Enforce idempotency.
+- Resolve product and maker details through ProductCatalogue.
+- Check every item's stock status.
+- Coordinate Sale/SaleLine creation and the all-or-nothing stock transition.
+- Return `Recorded(saleRef)` or `Rejected(reason)`.
+
+**Collaborators:** `Sale`, `SaleLine`, `SaleRepository`, `StockAvailabilityPort`, `ProductCatalogue`, `Clock`.
 
 ## Sale
-**Responsibilities:** know saleRef, processor, customer reference, date and status; contain sale lines; calculate/validate total from line values.  
-**Collaborators:** SaleLine, SaleService.
+
+**Responsibilities**
+- Store saleRef, processor, optional customer reference, channel, saleDate, recordedAt and status.
+- Contain SaleLines.
+- Calculate the sale total from its lines using the agreed monetary rules.
+
+**Collaborators:** `SaleLine`, `SaleService`, `SaleRepository`.
 
 ## SaleLine
-**Responsibilities:** know item/product, maker attribution, sold price, quantity and discount amount; calculate line net amount under agreed rules.  
-**Collaborators:** Sale, Product, Maker.
+
+**Responsibilities**
+- Store itemCode / stock item reference, maker attribution, soldPrice, quantity and optional discount.
+- Calculate the line net amount under the agreed discount rules.
+
+**Collaborators:** `Sale`, `Product`, `Maker`.
 
 ## ProductCatalogue
-**Responsibilities:** find item/product and maker attribution by itemCode; return a not-found or incomplete-attribution result.  
-**Collaborators:** SaleService, Product, Maker.
+
+**Responsibilities**
+- Find product/stock item information by itemCode.
+- Provide maker attribution.
+- Distinguish an unknown item from an item with missing maker attribution.
+
+**Collaborators:** `SaleService`, `Product`, `Maker`.
 
 ## SaleRepository
-**Responsibilities:** persist and retrieve Sale aggregate; support atomic save/idempotency if agreed.  
-**Collaborators:** SaleService.
 
-## StockAvailabilityPort
-**Responsibilities:** shared availability query and stock state transitions.  
-**Collaborators:** SaleService and other slices.
+**Responsibilities**
+- Persist and retrieve the Sale aggregate and its SaleLines.
+- Store the idempotency key and original result so retries cannot create a duplicate sale.
+- Participate in the agreed atomic commit/compensation design with stock changes.
+
+**Collaborators:** `SaleService`, `Sale`, `SaleLine`.
+
+## StockAvailabilityPort (shared)
+
+**Responsibilities**
+- Read status through `getStatus(itemCode)`.
+- Atomically sell all requested item codes through `sellAllIfAvailable(stockLines, idempotencyKey)`.
+- Return shared status and refusal values.
+
+**Collaborators:** `SaleService`; Slice 1 and Slice 3 also consume the shared port.
+
+## Clock (shared)
+
+**Responsibilities:** Provide `now()` for recordedAt and the default in-store saleDate.
+
+**Collaborators:** `SaleService`.
