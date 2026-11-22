@@ -25,5 +25,32 @@
 - Slice 3 reads stock but does not mutate stock or create Sale/SaleLine.
 - Slice 4 is the only provider of SaleRecordingPort and owns sale recording and stock updates.
 
+## Agreed shared contract conventions
+
+- Stock status values: `Available`, `Reserved`, `Sold`, `Unknown`.
+- Sale result: `Recorded(saleRef)` or `Rejected(reason)`.
+- Technical failures are reported separately and do not confirm a sale.
+- Sale request contains a stable `idempotencyKey`, `processedBy`,
+  `channel`, optional `customerRef`, `saleDate` where required,
+  optional `sourceRef` and all sale lines.
+- Slice 3 uses `entryId` as idempotency key, `OfflineMarket`
+  as channel, form date as `saleDate` and `offlineRef` as `sourceRef`.
+- Slice 3 reads stock but does not mutate stock or create Sale/SaleLine.
+- Slice 4 is the only provider of SaleRecordingPort and owns
+  sale recording and stock updates.
+- All four slices use `Clock.now()` for time-dependent operations.
+- Reservation working-day calculations belong to `ReservationPolicy`.
+- Slice 2 maintains independent order-line fulfilment statuses.
+- CustomerOrder status is derived from its order lines.
+- Substitution and cancellation require a predefined `decisionReason`.
+- `NotGiven` is a valid decision reason.
+- Customer approval occurs offstage.
+- Successful order-line changes retain the last-change author and timestamp.
+
 ## Decision status vocabulary
-Draft = suggested; Accepted = explicitly agreed by group; Rejected = group declined; Superseded = replaced by a later decision. Add date and participants when decisions are actually made.
+
+- **Accepted:** included in the agreed CA2 design scope.
+- **Deferred:** intentionally excluded from the current scope
+  and retained as a future extension.
+- **Rejected:** not adopted.
+- **Superseded:** replaced by a later decision.
