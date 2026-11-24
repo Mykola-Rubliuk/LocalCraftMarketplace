@@ -1,7 +1,9 @@
 @startuml
-title UC-01 Process a customer sale — System Sequence Diagram
-actor "Shop Volunteer" as Volunteer
+title SSD — UC-01 Process a Customer Sale
+
+actor "Shop Volunteer / Market Coordinator" as Processor
 participant "Local Craft Marketplace System" as System
-Volunteer -> System: recordSale(processedBy, customerRef?, lines)
-System --> Volunteer: SaleRecorded(saleRef) / SaleRejected(reason)
+
+Processor -> System: recordSale(SaleRequest)
+System --> Processor: Recorded(saleRef) / Rejected(reason) / TechnicalFailure
 @enduml
