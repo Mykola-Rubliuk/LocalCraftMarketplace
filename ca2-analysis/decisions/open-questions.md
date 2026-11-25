@@ -16,6 +16,8 @@
 | Q-SH-06 | Does the group approve the proposed SaleRequest fields needed by offline reconciliation: past `saleDate`, offline `soldPrice`, `sourceRef` and `idempotencyKey`? | SaleRecordingPort, Slice 3 / Slice 4 |
 | Q-SH-07 | Does any active reservation make an offline sale a conflict? Current Slice 3 proposal treats Reserved as a conflict. | Slice 3 conflict checker, stock policy |
 | Q-SH-08 | Is UC-10 confirmed as in CA2 scope? | Slice 3, PB-01, scenario selection |
+| Q-SH-10     | What is the agreed name of UC-04: 'Fulfil order lines' or 'Manage Customer Order'? Until agreed, UC-04 name is "Fulfil Order Lines".                               | Slice 2, README, PB-05, US-02, AD-02, scenario selection |
+| Q-SH-11     | Which use case records a customer order, now that UC-04 covers only fulfilment of order lines? FR-06 asks the system to record orders, but no slice does. | Slice 2 preconditions, FR-06 traceability, baseline change log |
 
 ## Integration risks
 
