@@ -1,3 +1,4 @@
+
 @startuml
 
 title UC-02 Reserve an item — object interaction
@@ -11,43 +12,66 @@ participant Clock
 entity Reservation
 
 Volunteer -> ReservationService: recordReservation(itemCode, customerRef, conditions)
-ReservationService -> ReservationService: validateRequest()
 
-ReservationService -> Stock: getStatus(itemCode)
-Stock --> ReservationService: Available
+ReservationService -> ReservationService: validateRequest(itemCode, customerRef, conditions)
 
-ReservationService -> Repo: findActiveByItemCode(itemCode)
-Repo --> ReservationService: no active reservation
+alt missing details
+    ReservationService --> Volunteer: Rejected(MissingDetails)
+else valid request
 
-ReservationService -> Clock: now()
-Clock --> ReservationService: currentDate
+    ReservationService -> Repo: findActiveByItemCode(itemCode)
+    Repo --> ReservationService: active reservation / none
 
-ReservationService -> Policy: calculateExpiry(currentDate)
-Policy -> Clock: workingDaysBetween(currentDate, expiry)
-Clock --> Policy: workingDays
-Policy --> ReservationService: agreedExpiry
+    alt conflicting reservation
+        ReservationService --> Volunteer: Rejected(ConflictingReservation)
+    else no active reservation
 
-create Reservation
-ReservationService -> Reservation: create(itemCode, customerRef, conditions, agreedExpiry)
-Reservation --> ReservationService: Active reservation
+        ReservationService -> Clock: now()
+        Clock --> ReservationService: currentDateTime
 
-ReservationService -> Repo: save(reservation)
-Repo --> ReservationService: saved(reservationId)
+        ReservationService -> Policy: calculateExpiry(currentDateTime)
+        Policy --> ReservationService: agreedExpiry
 
-ReservationService -> Stock: markReserved(itemCode)
-Stock --> ReservationService: Reserved
+        create Reservation
+        ReservationService -> Reservation: create(itemCode, customerRef, conditions, agreedExpiry)
+        Reservation --> ReservationService: Active reservation
 
-ReservationService --> Volunteer: ReservationConfirmed(reservationId, agreedExpiry)
+        ReservationService -> Repo: save(reservation)
+        
+        alt persistence failed
+            Repo --> ReservationService: PersistenceFailed
+            ReservationService --> Volunteer: Rejected(PersistenceFailed)
+        else reservation saved
+            Repo --> ReservationService: saved(reservationId)
 
-alt item unavailable
-  ReservationService --> Volunteer: Rejected(ItemUnavailable)
-else conflicting reservation
-  ReservationService --> Volunteer: Rejected(ConflictingReservation)
-else missing details
-  ReservationService --> Volunteer: Rejected(MissingDetails)
-else item not found
-  Stock --> ReservationService: ItemNotFound
-  ReservationService --> Volunteer: Rejected(ItemNotFound)
+            ReservationService -> Stock: reserveIfAvailable(itemCode)
+
+            alt item reserved successfully
+                Stock --> ReservationService: Reserved
+                ReservationService --> Volunteer: ReservationConfirmed(reservationId, agreedExpiry)
+
+            else item unavailable
+                Stock --> ReservationService: ItemUnavailable
+                ReservationService -> Repo: rollbackReservation(reservation)
+                ReservationService --> Volunteer: Rejected(ItemUnavailable)
+
+            else item not found
+                Stock --> ReservationService: ItemNotFound
+                ReservationService -> Repo: rollbackReservation(reservation)
+                ReservationService --> Volunteer: Rejected(ItemNotFound)
+
+            else stock update failed
+                Stock --> ReservationService: StockUpdateFailed
+                ReservationService -> Repo: rollbackReservation(reservation)
+                ReservationService --> Volunteer: Rejected(StockUpdateFailed)
+
+            else stock service unavailable
+                Stock --> ReservationService: StockServiceUnavailable
+                ReservationService -> Repo: rollbackReservation(reservation)
+                ReservationService --> Volunteer: Rejected(StockServiceUnavailable)
+            end
+        end
+    end
 end
 
 @enduml
