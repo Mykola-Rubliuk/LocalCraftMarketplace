@@ -1,0 +1,21 @@
+@startuml
+hide footbox
+title SSD — UC-04 Fulfil Order Lines
+
+actor "Shop Volunteer" as V
+participant "Local Craft Marketplace System" as S
+
+V -> S : viewOrder(orderId)
+S --> V : orderStatus, lines (lineId, lineStatus)
+
+alt line is finished
+  V -> S : markReady(orderId, lineId)
+  S --> V : Recorded(lineStatus, orderStatus) / Rejected(InvalidStatusChange)
+else customer collects the line
+  V -> S : recordCollection(orderId, lineId)
+  S --> V : Recorded(lineStatus, orderStatus) / Rejected(InvalidStatusChange)
+else customer agrees to substitute or cancel the line
+  V -> S : recordCustomerDecision(orderId, lineId, decision, decisionReason)
+  S --> V : Recorded(lineStatus, orderStatus) /\nRejected(InvalidStatusChange | ReasonNotSupplied)
+end
+@enduml
