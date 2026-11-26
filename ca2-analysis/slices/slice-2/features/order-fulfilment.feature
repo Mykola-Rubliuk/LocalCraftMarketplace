@@ -127,7 +127,7 @@ Feature: Fulfil order lines
       Examples:
         | current     | new       |
         | BeingMade   | Collected |
-        | Ready       | BeingMade |
+        | Ready       | Ready     |
         | Collected   | Cancelled |
         | Cancelled   | Ready     |
         | Substituted | Collected |

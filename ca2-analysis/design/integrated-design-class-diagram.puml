@@ -299,3 +299,4 @@
  SaleRecordingResult <|-- Rejected
  StockOperationResult <|-- StockUpdated
  StockOperationResult <|-- StockRejected
+@enduml

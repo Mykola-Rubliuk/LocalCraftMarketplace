@@ -1,6 +1,6 @@
 # Shared Interface Catalogue
 
-**Status:** Proposed contracts for group review. These definitions are the common reference for Slice 1, Slice 3 and Slice 4. They are design contracts, not evidence of a completed implementation.
+**Status:** Proposed contracts for group review. These definitions are the common reference for Slice 1, Slice 2, Slice 3 and Slice 4. They are design contracts, not evidence of a completed implementation.
 
 ## 1. StockAvailabilityPort
 
@@ -107,7 +107,7 @@ Slice 3 must:
 ## 3. Clock
 
 **Provider:** Shared time abstraction  
-**Consumers:** Slice 1, Slice 3 and Slice 4
+**Consumers:** Slice 1, Slice 2, Slice 3 and Slice 4
 
 ### Operation
 
@@ -116,6 +116,7 @@ Slice 3 must:
 Clock supplies the current date and time only. Reservation working-day calculations belong to `ReservationPolicy`, using an agreed working-day calendar. The calendar and expiry policy remain open under Q-01 and Q-SH-03.
 
 - Slice 1 uses `now()` to evaluate reservation expiry.
+- Slice 2 uses `now()` for an order line's `lastChangedAt`.
 - Slice 3 uses `now()` for `recordedAt` and manager-resolution timestamps.
 - Slice 4 uses `now()` for `recordedAt` and as the default in-store `saleDate`.
 
