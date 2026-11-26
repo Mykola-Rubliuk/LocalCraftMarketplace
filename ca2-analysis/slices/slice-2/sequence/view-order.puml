@@ -1,0 +1,28 @@
+@startuml
+title Sequence — viewOrder(orderId)
+actor "Shop Volunteer" as V
+participant ":OrderFulfilmentService" as Svc
+participant ":CustomerOrderRepository" as Repo
+participant "order:CustomerOrder" as Order
+participant "line:OrderLine" as Line
+
+V -> Svc : viewOrder(orderId)
+Svc -> Repo : findById(orderId)
+Repo --> Svc : order | not found
+
+alt order exists
+  Svc -> Order : getStatus()
+  Order --> Svc : orderStatus
+  Svc -> Order : getLineDetails()
+  loop each line
+    Order -> Line : getLineId()
+    Line --> Order : lineId
+    Order -> Line : getStatus()
+    Line --> Order : lineStatus
+  end
+  Order --> Svc : lines (lineId, lineStatus)
+  Svc --> V : orderStatus, lines (lineId, lineStatus)
+else order not found
+  Svc --> V : Rejected(OrderNotFound)
+end
+@enduml

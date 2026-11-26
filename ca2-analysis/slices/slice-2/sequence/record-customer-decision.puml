@@ -1,0 +1,53 @@
+@startuml
+title Sequence — recordCustomerDecision(orderId, lineId, decision, decisionReason)
+actor "Shop Volunteer" as V
+participant "OrderFulfilmentService" as Svc
+participant "CustomerOrderRepository" as Repo
+participant "CurrentUser" as User
+participant "Clock" as Clock
+participant "CustomerOrder" as Order
+participant "OrderLine" as Line
+
+V -> Svc : recordCustomerDecision(orderId, lineId,\ndecision, decisionReason)
+Svc -> Repo : findById(orderId)
+Repo --> Svc : order
+Svc -> User : getUserId()
+User --> Svc : changedBy
+Svc -> Clock : now()
+Clock --> Svc : changedAt
+
+Svc -> Order : recordLineDecision(lineId, decision,\ndecisionReason, changedBy, changedAt)
+note right of Svc
+  decisionReason is passed on
+  even if it is missing
+end note
+Order -> Order : findLine(lineId)
+Order -> Line : applyDecision(decision, decisionReason,\nchangedBy, changedAt)
+
+alt line is closed
+  Line --> Order : Rejected(InvalidStatusChange)
+  Order --> Svc : Rejected(InvalidStatusChange)
+  Svc --> V : Rejected(InvalidStatusChange)
+else line is not closed and no reason is supplied
+  Line --> Order : Rejected(ReasonNotSupplied)
+  Order --> Svc : Rejected(ReasonNotSupplied)
+  Svc --> V : Rejected(ReasonNotSupplied)
+else line is not closed and a reason is supplied
+  Line -> Line : set status to decision,\ndecisionReason, lastChangedBy,\nlastChangedAt
+  Line --> Order : accepted
+  Order -> Order : recalculateStatus()
+  loop each line
+    Order -> Line : isClosed()
+    note right : sent to every line\nin the order
+    Line --> Order : closed | not closed
+  end
+  Order --> Svc : Recorded(lineStatus, orderStatus)
+  Svc -> Repo : save(order)
+  Repo --> Svc : committed
+  note over Svc, Repo
+    Recorded is returned only after the commit.
+    A technical failure leaves no partial change.
+  end note
+  Svc --> V : Recorded(lineStatus, orderStatus)
+end
+@enduml

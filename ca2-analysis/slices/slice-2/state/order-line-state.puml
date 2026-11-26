@@ -1,0 +1,31 @@
+@startuml
+title State Machine — OrderLine (UC-04)
+
+state Closed {
+  state Collected
+  state Cancelled
+  state Substituted
+}
+
+[*] --> BeingMade
+note on link
+  Assumed initial status. UC-04 does not cover
+  how an order is recorded (Q-SH-11).
+end note
+
+BeingMade --> Ready : markReady
+Ready --> Collected : recordCollection
+
+BeingMade --> Cancelled : recordCustomerDecision\n[decision = Cancelled and reason supplied]
+BeingMade --> Substituted : recordCustomerDecision\n[decision = Substituted and reason supplied]
+Ready --> Cancelled : recordCustomerDecision\n[decision = Cancelled and reason supplied]
+Ready --> Substituted : recordCustomerDecision\n[decision = Substituted and reason supplied]
+
+legend bottom
+  Any transition not shown is refused with InvalidStatusChange.
+  A decision without a reason is refused with ReasonNotSupplied.
+  The line status is checked before the reason.
+  A refusal changes nothing.
+  The order is Completed when all its lines are in Closed, otherwise Open.
+end legend
+@enduml

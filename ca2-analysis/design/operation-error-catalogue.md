@@ -1,6 +1,6 @@
 # Shared Operation and Error Catalogue
 
-**Purpose:** Keep expected business refusals and technical failures consistent across Slice 1, Slice 3 and Slice 4.
+**Purpose:** Keep expected business refusals and technical failures consistent across Slice 1, Slice 2, Slice 3 and Slice 4.
 
 An error name may be reused only when it has the same meaning. Context-specific referral reasons are not interchangeable with operation errors.
 
@@ -25,7 +25,17 @@ An error name may be reused only when it has the same meaning. Context-specific 
 
 `ItemNotFound`, `ItemUnavailable`, `InvalidStockTransition`, `StockUpdateFailed` and `StockServiceUnavailable` are shared stock outcomes above; do not define different meanings for them in Slice 1.
 
-## 3. Slice 3 — Offline Reconciliation
+## 3. Slice 2 — Fulfil Order Lines
+
+| Name | Meaning | Expected handling |
+|---|---|---|
+| `OrderNotFound` | No order exists with the supplied `orderId`. | Refuse `viewOrder`; change nothing. |
+| `InvalidStatusChange` | The requested change is not allowed from the order line's current status. | Reject; change no line or order status, record or replace no `decisionReason`, and keep the last-change record. |
+| `ReasonNotSupplied` | A customer decision is submitted without a `decisionReason` for a line that is not closed. | Reject; change no line or order status, record no `decisionReason`, and keep the last-change record. |
+
+For a customer decision, the line's status is checked first. A closed line is refused with `InvalidStatusChange`, whether or not a `decisionReason` is supplied.
+
+## 4. Slice 3 — Offline Reconciliation
 
 ### Referral reasons
 
@@ -55,7 +65,7 @@ These are stored on an `OfflineTransaction` when it cannot safely be reconciled.
 | `SaleRecordingUnavailable` | SaleRecordingPort did not return a reliable result because of a technical failure or timeout. | Keep the offline record `AwaitingReconciliation`; retry with the same `entryId` idempotency key. |
 | `PersistenceFailed` | An offline transaction could not be stored or updated. | Do not report the state transition as successful. Preserve the last confirmed state. |
 
-## 4. Slice 4 — Customer Sale
+## 5. Slice 4 — Customer Sale
 
 | Name | Meaning | Expected handling |
 |---|---|---|
@@ -71,9 +81,10 @@ These are stored on an `OfflineTransaction` when it cannot safely be reconciled.
 `ItemNotFound` and `ItemUnavailable` are shared stock outcomes and must use the definitions in Section 1.
 
 
-## 5. Naming rules
+## 6. Naming rules
 
 - Use `Recorded(saleRef)` / `Rejected(reason)` for SaleRecordingPort.
+- Use `Recorded(lineStatus, orderStatus)` / `Rejected(reason)` for Slice 2 order fulfilment operations.
 - Use `ItemNotFound` and `ItemUnavailable` consistently across stock consumers.
 - Use `SaleRejected` only as Slice 3's referral reason when SaleRecordingPort rejects a request.
 - Do not use a technical failure such as timeout as an ordinary business referral reason.
