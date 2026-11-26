@@ -7,7 +7,7 @@
 | **Goal** | Record a fulfilment status and customer decision for each order line and retain an accurate record of the progress for each part of the order. |
 | **Trigger** | A line is finished, a customer collects it, or a customer agrees to substitute or cancel it. |
 | **Preconditions** | Shop Volunteer is authorised; the order exists and has at least one order line. |
-| **Minimal guarantee** | No `OrderLine` or `CustomerOrder` status is changed, and no `decisionReason` is recorded.|
+| **Minimal guarantee** | No `OrderLine` or `CustomerOrder` status is changed, no `decisionReason` is recorded, and the record of who/when made the last change stays unchanged.|
 | **Success guarantee** | The selected line has its new status and, for a customer decision, its `decisionReason` is recorded and who/when made the last change; all other lines are unchanged; the order status reflects its lines.|
 | **Related** | `US-02` ; `FR-06` / `Q-SH-11`, `FR-07` / `Q-SH-10`; `BR-02`, `BR-03`; `SC-04`; `D-CA2-06`, `A-04` / `Q-03` / `D-CA2-14`, `D-CA2-15`|
 
