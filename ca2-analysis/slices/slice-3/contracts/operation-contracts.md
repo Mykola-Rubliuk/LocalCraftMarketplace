@@ -1,36 +1,57 @@
-# Operation contracts — UC-10
+# Operation contracts — UC-10 Reconcile Offline Transactions
 
-Status values: AwaitingReconciliation, Reconciled, ReferredToManager, Resolved.
-Referral reasons: DuplicateReference, ItemAlreadySold, ItemReserved, ItemUnknown, SaleRejected.
-Manager decisions: Accepted, Adjusted, Rejected, FollowUpOutsideSystem.
-Expected refusals are returned as result variants; technical failures are errors (D-CA2-02).
+Signatures and result types follow `design/integrated-design-class-diagram.puml`. Error names follow `design/operation-error-catalogue.md`.
 
-## CO-1 enterOfflineTransaction(submissionId, offlineRef, date, items, prices)
+- **Business result:** `OfflineOperationResult` = `OfflineOperationSuccess` (returns the `OfflineTransaction` with its new status) or `OfflineOperationRejected(reason, invalidFields)`.
+- **Technical failures** (`SaleRecordingUnavailable`, `StockServiceUnavailable`, `PersistenceFailed`) are reported separately from business results and never change the last confirmed state.
+- **Status values:** `AwaitingReconciliation`, `Reconciled`, `ReferredToManager`, `Resolved`.
+- **Referral reasons:** `DuplicateReference`, `ItemAlreadySold`, `ItemReserved`, `ItemUnknown`, `SaleRejected`.
 
-| | |
-|---|---|
-| **Cross-references** | UC-10 steps 2–3, A1, E1, E3; SC-11, SC-13; FR-13 |
-| **Preconditions** | User is an authorised Market Coordinator |
-| **Postconditions (new reference)** | An OfflineTransaction was created with a new entryId, submissionId, offlineRef, date, recordedBy and recordedAt (Clock); an OfflineLine was created for each item with its price; status = AwaitingReconciliation |
-| **Postconditions (reference already used)** | An OfflineTransaction was created as above; status = ReferredToManager; referralReason = DuplicateReference; no Sale was recorded |
-| **Postconditions (submissionId already processed)** | No object was created; the existing record and its status are returned |
-| **Refusal (incomplete data)** | Nothing was created; the result lists every missing or invalid field (reference, date, no items, item without price, negative price, date after today) |
-
-## CO-2 reconcile(offlineRef)
+## CO-1 enterOfflineTransaction(submissionId, offlineRef, saleDate, recordedBy, lines): OfflineOperationResult
 
 | | |
 |---|---|
-| **Cross-references** | UC-10 steps 4–7, A2, A3, E2; SC-12, SC-14; FR-13, NFR-05 |
-| **Preconditions** | Exactly one record with offlineRef has status AwaitingReconciliation; user is an authorised Market Coordinator |
-| **Postconditions (clean)** | A Sale was recorded through SaleRecordingPort with all lines, using entryId as idempotency key; tx.saleId = the returned saleId; tx.status = Reconciled; the items are no longer available (done by SaleRecordingPort) |
-| **Postconditions (duplicate or conflict)** | No Sale was recorded and no line was sold; tx.status = ReferredToManager; tx.referralReason set |
-| **Postconditions (sale refused by port)** | No Sale was recorded; tx.status = ReferredToManager; tx.referralReason = SaleRejected |
-| **Technical failure** | No state change; tx remains AwaitingReconciliation |
+| **Cross-references** | UC-10 steps 2–3, A1, A6, E1, E3; SC-11, SC-13; FR-13 |
+| **Preconditions** | Caller is an authorised Market Coordinator (`requireCoordinatorRole`) |
+| **Postconditions — new reference** | An `OfflineTransaction` was created with a new `entryId`, `submissionId`, `offlineRef`, `saleDate`, `recordedBy` and `recordedAt = Clock.now()`; an `OfflineLine` (`itemCode`, `quantity`, `soldPrice`) was created for each line; `status = AwaitingReconciliation`; result `OfflineOperationSuccess` |
+| **Postconditions — reference already used** | The `OfflineTransaction` was created as above; `status = ReferredToManager`; `referralReason = DuplicateReference`; `SaleRecordingPort` was not called; result `OfflineOperationSuccess` |
+| **Postconditions — submissionId already stored** | Nothing was created; the existing entry is returned in `OfflineOperationSuccess` |
+| **Business refusals** | `InvalidOfflineEntry` with `invalidFields` (missing reference or date, no lines, missing item code, quantity < 1, missing or negative price, date after `Clock.now()`); `UnauthorisedCoordinator`. Nothing is stored |
+| **Technical failures** | `PersistenceFailed`: entry not reported as stored |
 
-## CO-3 resolve(offlineRef, decision, note)
+## CO-2 reconcile(entryId): OfflineOperationResult
 
 | | |
 |---|---|
-| **Cross-references** | UC-10 A4; SC-15; A-08, BR-05 |
-| **Preconditions** | Exactly one record with offlineRef has status ReferredToManager; user is an authorised Manager; decision present; note not blank |
-| **Postconditions** | tx.decision, tx.resolutionNote, tx.resolvedBy and tx.resolvedAt (Clock) were set; tx.status = Resolved; no Sale was recorded (D-CA2-13) |
+| **Cross-references** | UC-10 steps 4–8, A2, A3, A4, E2, E3; SC-12, SC-14; FR-13, NFR-05 |
+| **Preconditions** | Caller is an authorised Market Coordinator; an `OfflineTransaction` with `entryId` exists; its `status = AwaitingReconciliation` |
+| **Postconditions — always (before the first sale attempt)** | If `tx.saleRequest` was empty, a `SaleRequest` was created with `idempotencyKey = entryId`, `processedBy` = coordinator, `channel = OfflineMarket`, `customerRef = null`, `saleDate = tx.saleDate`, `sourceRef = tx.offlineRef` and one `SaleRequestLine` per `OfflineLine`, and it was persisted on `tx`. On a retry the stored request was reused unchanged |
+| **Postconditions — sale already recorded** (`findRecordedResult` returned `Recorded(saleRef)`) | `tx.saleRef` = original `saleRef`; `tx.status = Reconciled`; no conflict check and no new sale |
+| **Postconditions — clean and recorded** (`recordSale` returned `Recorded(saleRef)`) | Exactly one sale exists for the request; `tx.saleRef` = returned `saleRef`; `tx.status = Reconciled` |
+| **Postconditions — duplicate or stock conflict** | `recordSale` was not called; no sale and no line was recorded; `tx.status = ReferredToManager`; `tx.referralReason` ∈ {`DuplicateReference`, `ItemAlreadySold`, `ItemReserved`, `ItemUnknown`} |
+| **Postconditions — sale rejected** (`Rejected(reason)` from either port operation, including `IdempotencyKeyConflict`) | No sale was recorded; `tx.status = ReferredToManager`; `tx.referralReason = SaleRejected`; `tx.referralDetail` = the rejection reason |
+| **Business refusals** | Entry not found; entry not `AwaitingReconciliation` (e.g. already reconciled); `UnauthorisedCoordinator`. No change, no sale |
+| **Technical failures** | `SaleRecordingUnavailable`, `StockServiceUnavailable`, `PersistenceFailed`: `tx` stays `AwaitingReconciliation` with its stored `saleRequest`; a retry reuses the same request and idempotency key |
+
+## CO-3 resolve(entryId, decision: ResolutionDecision, note): OfflineOperationResult
+
+| | |
+|---|---|
+| **Cross-references** | UC-10 A5, E3; SC-15; A-08, BR-05 |
+| **Preconditions** | Caller is an authorised Manager (`requireManagerRole`); an `OfflineTransaction` with `entryId` exists; its `status = ReferredToManager`; `decision` ∈ {`Accepted`, `Adjusted`, `Rejected`, `FollowUpOutsideSystem`}; `note` is not blank |
+| **Postconditions** | `tx.decision`, `tx.resolutionNote`, `tx.resolvedBy` and `tx.resolvedAt = Clock.now()` were set; `tx.status = Resolved`; `SaleRecordingPort` was not called and no sale was recorded; result `OfflineOperationSuccess` |
+| **Business refusals** | `UnauthorisedManager`; entry not found; entry not `ReferredToManager`; missing decision or blank note. Entry unchanged |
+| **Technical failures** | `PersistenceFailed`: entry stays `ReferredToManager` |
+
+## Status transitions
+
+| From | Operation | Condition | To |
+|---|---|---|---|
+| — | enterOfflineTransaction | new reference | `AwaitingReconciliation` |
+| — | enterOfflineTransaction | reference already used | `ReferredToManager` (`DuplicateReference`) |
+| `AwaitingReconciliation` | reconcile | `Recorded(saleRef)` from recovery or recording | `Reconciled` |
+| `AwaitingReconciliation` | reconcile | duplicate, stock conflict or `Rejected` | `ReferredToManager` |
+| `AwaitingReconciliation` | reconcile | technical failure | `AwaitingReconciliation` (unchanged) |
+| `ReferredToManager` | resolve | valid decision and note | `Resolved` |
+
+Any other transition is refused. NFR-05 is met when no entry is `AwaitingReconciliation` or `ReferredToManager`.

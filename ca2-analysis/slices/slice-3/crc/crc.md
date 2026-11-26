@@ -1,56 +1,66 @@
 # CRC cards — Slice 3
 
-## OfflineReconciliationService
+## OfflineReconciliationService (controller)
 | Responsibilities | Collaborators |
 |---|---|
-| Handle enterOfflineTransaction, reconcile and resolve | OfflineTransactionRepository |
-| Check the user's role (Coordinator / Manager) | ConflictChecker |
-| Validate form data and refuse incomplete entries | SaleRecordingPort |
-| Create OfflineTransaction and OfflineLines | Clock |
-| Call SaleRecordingPort only after a clean check | OfflineTransaction |
+| Handle `enterOfflineTransaction`, `reconcile(entryId)` and `resolve(entryId, decision, note)` | OfflineTransactionRepository |
+| Check the caller's role (`requireCoordinatorRole`, `requireManagerRole`) | OfflineTransaction |
+| Validate offline form data and refuse invalid entries | ConflictChecker |
+| Create OfflineTransaction and its OfflineLines | SaleRecordingPort |
+| Create the SaleRequest once, persist it on the entry before the first sale attempt and reuse it on every retry | Clock |
+| Coordinate sale recovery: call `findRecordedResult` before any conflict check | |
+| Call `recordSale` only after a clean check | |
+| Handle reconciliation results: `Recorded` → Reconciled; `Rejected` (incl. `IdempotencyKeyConflict`) → referred; technical failure → no state change | |
+| Return `OfflineOperationResult` | |
 
-## OfflineTransaction
+## OfflineTransaction (entity)
 | Responsibilities | Collaborators |
 |---|---|
-| Know entryId, submissionId, offlineRef, date, recordedBy, recordedAt | OfflineLine |
-| Know status, referralReason, saleId, decision, note, resolvedBy, resolvedAt | |
-| markReconciled(saleId) — only from AwaitingReconciliation | |
-| refer(reason) — only from AwaitingReconciliation | |
-| resolve(decision, note, by, at) — only from ReferredToManager | |
+| Know `entryId`, `submissionId`, `offlineRef`, `saleDate`, `recordedAt` | OfflineLine |
+| Know `recordedBy` — the coordinator who entered the form | SaleRequest |
+| Know `status` and `referralReason` | |
+| Know `referralDetail` — the underlying reason, e.g. the sale rejection reason | |
+| Know `saleRef` — the reference of the recorded sale | |
+| Know `saleRequest` — the stable request reused on retries | |
+| Know `decision`, `resolutionNote`, `resolvedBy`, `resolvedAt` — the Manager's resolution | |
+| `create(...)` — build a new entry in `AwaitingReconciliation` | |
+| `markReconciled(saleRef)` — only from `AwaitingReconciliation` | |
+| `refer(reason, detail)` — only from `AwaitingReconciliation` (or on entry for a duplicate) | |
+| `resolve(decision, note, resolvedBy, resolvedAt)` — only from `ReferredToManager` | |
 
-## OfflineLine
+## OfflineLine (entity)
 | Responsibilities | Collaborators |
 |---|---|
-| Know itemCode and offline price | — |
+| Know `itemCode`, `quantity` and `soldPrice` as written on the offline form | — |
 
-## ConflictChecker
+## ConflictChecker (domain service)
 | Responsibilities | Collaborators |
 |---|---|
-| Detect a repeated offline reference | OfflineTransactionRepository |
-| Check every line for sold, reserved or unknown items | StockAvailabilityPort |
-| Return clean or a referral reason without side effects | |
+| `check(transaction)` — detect a repeated `offlineRef` and check every line's stock status | OfflineTransactionRepository |
+| Map `Sold` → `ItemAlreadySold`, `Reserved` → `ItemReserved`, `Unknown` → `ItemUnknown` | StockAvailabilityPort |
+| Return a `ReferralReason` or nothing, without side effects | |
 
-## OfflineTransactionRepository (port)
+## OfflineTransactionRepository (repository)
 | Responsibilities | Collaborators |
 |---|---|
-| Save offline transactions | — |
-| Find by reference and status, by submissionId | |
-| Tell whether another record uses a reference | |
-| Count records by status (NFR-05) | |
+| `findByEntryId(entryId)` — retrieve a unique offline entry | OfflineTransaction |
+| `findBySubmissionId(submissionId)` — retrieve an existing submission to prevent duplicate entry | |
+| `existsOtherWithRef(offlineRef, entryId)` — detect duplicate offline references | |
+| `save(transaction)` — persist an entry and its state changes | |
+| `countByStatus(status)` — show what is still awaiting or referred (NFR-05) | |
 
 ## StockAvailabilityPort (shared port)
 | Responsibilities | Collaborators |
 |---|---|
-| Report availability of an item code: available, sold, reserved, unknown | — |
+| `getStatus(itemCode)` — report `Available`, `Reserved`, `Sold` or `Unknown`. Slice 3 uses it read-only | — |
 
 ## SaleRecordingPort (provided by Slice 4)
 | Responsibilities | Collaborators |
 |---|---|
-| Record an atomic sale with maker attribution | — |
-| Mark items sold | |
-| Return Recorded(saleId) or Rejected(reason); honour the idempotency key | |
+| `recordSale(request)` — record one atomic sale, mark items Sold, return `Recorded(saleRef)` or `Rejected(reason)` | SaleRequest |
+| `findRecordedResult(request)` — retrieve a previously committed sale result: same key and payload → `Recorded(saleRef)`; same key, different payload → `Rejected(IdempotencyKeyConflict)`; none → null | |
 
-## Clock
+## Clock (shared port)
 | Responsibilities | Collaborators |
 |---|---|
-| Provide the current date and time | — |
+| `now()` — provide the current date and time for `recordedAt`, `resolvedAt` and the "date not in the future" check | — |
