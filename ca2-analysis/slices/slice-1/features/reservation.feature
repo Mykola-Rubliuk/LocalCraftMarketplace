@@ -1,4 +1,5 @@
 # Slice 1 — Feature: Reserve an item
+
 Feature: Reserve an item
   As a Shop Volunteer
   I want to reserve an available item for a customer
@@ -15,6 +16,7 @@ Feature: Reserve an item
 
   Scenario: Reject a reservation for an unavailable item
     Given item "IT-202" is already sold
+    And no active reservation exists for item "IT-202"
     And customer "CU-002" provides all required reservation details
     When the volunteer attempts to reserve item "IT-202"
     Then the request is rejected with "ItemUnavailable"
@@ -59,6 +61,34 @@ Feature: Reserve an item
     Then the reservation is assigned an expiry date of Thursday
     And the reservation status is "Active"
 
+  Scenario: Reject a reservation when persistence fails
+    Given item "IT-212" is available
+    And customer "CU-003" provides all required reservation details
+    And the reservation repository is unable to save the reservation
+    When the volunteer attempts to reserve item "IT-212"
+    Then the request is rejected with "PersistenceFailed"
+    And no reservation is stored
+    And item "IT-212" remains available
+
+  Scenario: Roll back a reservation when stock update fails
+    Given item "IT-213" is available
+    And customer "CU-004" provides all required reservation details
+    And the reservation is successfully saved
+    And the stock reservation operation fails
+    When the volunteer attempts to reserve item "IT-213"
+    Then the request is rejected with "StockUpdateFailed"
+    And the newly created reservation is rolled back
+    And item "IT-213" remains available
+
+  Scenario: Reject a reservation when the stock service is unavailable
+    Given item "IT-214" is available
+    And customer "CU-005" provides all required reservation details
+    And the stock service is unavailable
+    When the volunteer attempts to reserve item "IT-214"
+    Then the request is rejected with "StockServiceUnavailable"
+    And no incomplete reservation remains
+    And item "IT-214" remains available
+
   Scenario: Keep a reservation active before its expiry date
     Given an active reservation exists for item "IT-208"
     And its agreed expiry date is Wednesday
@@ -69,9 +99,37 @@ Feature: Reserve an item
   Scenario: Expire a reservation when its expiry date is reached
     Given an active reservation exists for item "IT-209"
     And its agreed expiry date is Wednesday
+    And no other commitment applies to item "IT-209"
     When the system evaluates expiry on Wednesday
     Then the reservation status changes to "Expired"
-    And item "IT-209" becomes available if no other commitment applies
+    And item "IT-209" becomes available
+
+  Scenario: Do not release stock when another commitment exists
+    Given an active reservation exists for item "IT-215"
+    And its agreed expiry date has been reached
+    And another commitment applies to item "IT-215"
+    When the system evaluates expiry
+    Then the reservation status changes to "Expired"
+    And item "IT-215" remains reserved
+    And the other commitment is not affected
+
+  Scenario: Keep reservation active when stock release fails
+    Given an active reservation exists for item "IT-216"
+    And its agreed expiry date has been reached
+    And the stock release operation fails
+    When the system evaluates expiry
+    Then the expiry operation reports "StockUpdateFailed"
+    And the reservation remains "Active"
+    And item "IT-216" remains reserved
+
+  Scenario: Handle an unavailable stock service during expiry evaluation
+    Given an active reservation exists for item "IT-217"
+    And its agreed expiry date has been reached
+    And the stock service is unavailable
+    When the system evaluates expiry
+    Then the expiry operation reports "StockServiceUnavailable"
+    And the reservation remains "Active"
+    And item "IT-217" remains reserved
 
   Scenario: Skip weekends when calculating reservation expiry
     Given item "IT-210" is available

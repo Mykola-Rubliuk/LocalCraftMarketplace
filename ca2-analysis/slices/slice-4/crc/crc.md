@@ -4,31 +4,37 @@
 
 **Responsibilities**
 - Implement `SaleRecordingPort.recordSale(SaleRequest)`.
-- Validate request identity, processor and sale lines.
-- Enforce idempotency.
-- Resolve product and maker details through ProductCatalogue.
-- Check every item's stock status.
-- Coordinate Sale/SaleLine creation and the all-or-nothing stock transition.
-- Return `Recorded(saleRef)` or `Rejected(reason)`.
+- Validate request identity, processor authorisation and sale lines using `validateRequestAndIdempotency()`.
+- Enforce idempotency by retrieving and checking previously recorded sale results.
+- Resolve product and maker details through `ProductCatalogue.findItem()`.
+- Check every item's stock status through `StockAvailabilityPort.getStatus()`.
+- Obtain recording timestamps through `Clock.now()`.
+- Coordinate the creation of Sale and SaleLine objects.
+- Coordinate the all-or-nothing stock transition and sale persistence.
+- Return `Recorded(saleRef)` or `Rejected(reason)` and report technical failures separately.
 
-**Collaborators:** `Sale`, `SaleLine`, `SaleRepository`, `StockAvailabilityPort`, `ProductCatalogue`, `Clock`.
+**Collaborators:** `SaleRecordingPort`, `Sale`, `SaleLine`, `SaleRepository`, `StockAvailabilityPort`, `ProductCatalogue`, `Clock`.
 
 ## Sale
 
 **Responsibilities**
-- Store saleRef, processor, optional customer reference, channel, saleDate, recordedAt and status.
-- Contain SaleLines.
-- Calculate the sale total from its lines using the agreed monetary rules.
+- Store saleRef, processedBy, optional customerRef, channel, saleDate, recordedAt and status.
+- Initialise a Sale using `create(request, recordedAt)`.
+- Own and maintain its collection of SaleLines.
+- Add a SaleLine through `addLine(line)`.
+- Calculate the sale total through `calculateTotal()` using the net amounts of its SaleLines.
 
 **Collaborators:** `SaleLine`, `SaleService`, `SaleRepository`.
 
 ## SaleLine
 
 **Responsibilities**
-- Store itemCode / stock item reference, maker attribution, soldPrice, quantity and optional discount.
-- Calculate the line net amount under the agreed discount rules.
+- Initialise a sale line through `create(item, maker, soldPrice, quantity, discountAmount)`.
+- Retain the itemCode, product details and maker attribution.
+- Store soldPrice, quantity and optional discountAmount.
+- Calculate the line net amount through `calculateNetAmount()` using the agreed monetary rules.
 
-**Collaborators:** `Sale`, `Product`, `Maker`.
+**Collaborators:** `Sale`, `SaleService`, `Product`, `Maker`.
 
 ## ProductCatalogue
 
@@ -42,23 +48,43 @@
 ## SaleRepository
 
 **Responsibilities**
-- Persist and retrieve the Sale aggregate and its SaleLines.
-- Store the idempotency key and original result so retries cannot create a duplicate sale.
-- Participate in the agreed atomic commit/compensation design with stock changes.
+- Retrieve an existing sale result through `findResultByIdempotencyKey(key)`.
+- Persist the Sale aggregate and its SaleLines through `persist(sale, idempotencyKey)`.
+- Retain the idempotency key and sufficient request information to identify repeated or conflicting requests.
+- Preserve the original recorded result for safe retries.
+- Participate in the atomic consistency boundary between sale persistence and stock updates.
 
 **Collaborators:** `SaleService`, `Sale`, `SaleLine`.
 
 ## StockAvailabilityPort (shared)
 
 **Responsibilities**
-- Read status through `getStatus(itemCode)`.
-- Atomically sell all requested item codes through `sellAllIfAvailable(stockLines, idempotencyKey)`.
-- Return shared status and refusal values.
+- Read stock availability through `getStatus(itemCode)`.
+- Report `Available`, `Reserved`, `Sold` or `Unknown`.
+- Re-check availability before performing a stock transition.
+- Atomically sell all requested stock lines through `sellAllIfAvailable(stockLines, idempotencyKey)`.
+- Honour the idempotency key when repeating a stock operation.
+- Return the documented stock update, refusal or technical failure outcomes.
+- Ensure no partial stock transition occurs when any requested line fails.
 
 **Collaborators:** `SaleService`; Slice 1 and Slice 3 also consume the shared port.
 
 ## Clock (shared)
 
-**Responsibilities:** Provide `now()` for recordedAt and the default in-store saleDate.
+**Responsibilities**
+- Provide the current date and time through `now()`.
+- Supply the recordedAt timestamp.
+- Supply the date used as the default in-store saleDate when no explicit sale date is provided.
 
 **Collaborators:** `SaleService`.
+
+## SaleRecordingPort (shared)
+
+**Responsibilities**
+- Define the shared `recordSale(request: SaleRequest)` operation.
+- Provide a consistent sale-recording boundary for in-store and offline sales.
+- Define the expected sale-recording outcomes.
+- Require idempotent and all-or-nothing sale-recording behaviour.
+- Isolate consumers from the internal sale-recording implementation.
+
+**Collaborators:** `SaleService`, `OfflineReconciliationService`.

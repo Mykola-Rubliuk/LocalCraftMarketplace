@@ -28,6 +28,16 @@ else new request
     Stock --> SaleService: Available / other status
   end
 
+alt same key and same payload already recorded
+    SaleService --> Port: Recorded(existingSaleRef)
+
+else same key with different payload
+    SaleService --> Port: Rejected(IdempotencyKeyConflict)
+
+else new request
+    ' Continue sale processing
+end
+
   alt any line invalid or unavailable
     SaleService --> Port: Rejected(reason)
     Port --> Processor: Rejected(reason)
@@ -43,7 +53,7 @@ else new request
     loop each valid line
       create SaleLine
       SaleService -> SaleLine: create(item, maker, soldPrice, quantity, discount)
-      Sale -> SaleLine: addLine(line)
+      SaleService -> Sale: addLine(line)
     end
     SaleService -> Stock: sellAllIfAvailable(stockLines, idempotencyKey)
     Stock --> SaleService: Updated(Sold) / Rejected(reason)
@@ -51,7 +61,7 @@ else new request
       SaleService --> Port: Rejected(ItemUnavailable)
       Port --> Processor: Rejected(ItemUnavailable)
     else stock transition successful
-      SaleService -> Repo: persist sale and idempotency result
+      SaleService -> Repo: persist(sale, idempotencyKey)
       Repo --> SaleService: committed(saleRef) / technical failure
       alt persistence successful
         SaleService --> Port: Recorded(saleRef)

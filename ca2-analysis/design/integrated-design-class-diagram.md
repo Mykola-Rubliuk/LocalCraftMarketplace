@@ -1,60 +1,91 @@
 # Integrated Design Class Diagram
 
-**Scope:** Slice 1 — Manage Reservation (UC-02), Slice 3 — Reconcile Offline Transactions (proposed UC-10), and Slice 4 — Process a Customer Sale (UC-01).
+**Scope:** Slice 1 — Manage Reservation (UC-02), Slice 3 — Reconcile Offline Transactions (UC-10), and Slice 4 — Process a Customer Sale (UC-01).
 
 **Diagram source:** [`integrated-design-class-diagram.puml`](integrated-design-class-diagram.puml)
 
-The diagram presents one integrated design. It groups each slice's controller, domain objects and repositories while showing the shared contracts that connect the slices. Slice 2 is intentionally excluded because its design is not ready for integration.
+The diagram presents the integrated object-oriented design of these three behavioural slices. It groups their application service controllers, domain objects and repositories, and identifies the shared contracts that connect them. Slice 2 — Fulfil Order Lines (UC-04) is documented separately and is outside the scope of this diagram version.
 
 ## Integration structure
 
 | Shared abstraction | Provider / implementation | Consumers | Responsibility |
 |---|---|---|---|
-| `StockAvailabilityPort` | Shared stock capability; concrete provider is not assigned in the current documents | Slice 1, Slice 3 and Slice 4 | One stock-status vocabulary and controlled stock transitions |
-| `SaleRecordingPort` | `SaleService` in Slice 4 | Slice 3, and other approved sale-recording callers | One entry point for validating and recording a sale |
-| `Clock` | Shared time abstraction; concrete provider is not assigned in the current documents | Slice 1, Slice 3 and Slice 4 | Current date/time via `now()` |
+| `StockAvailabilityPort` | Shared stock capability | Slice 1, Slice 3 and Slice 4 | Provide a common stock-status vocabulary and controlled stock transitions. |
+| `SaleRecordingPort` | `SaleService` in Slice 4 | Slice 3 and in-store sale callers | Provide a single entry point for validating and recording sales. |
+| `Clock` | Shared time abstraction | Slice 1, Slice 3 and Slice 4 | Supply the current date and time through `now()`. |
+
+Concrete stock and clock implementations are outside the abstraction level of this design diagram.
 
 ## How the three slices collaborate
 
-1. **Slice 1 — Reservation:** `ReservationService` checks stock through `StockAvailabilityPort`, checks existing reservations through `ReservationRepository`, obtains the current time from `Clock`, and asks `ReservationPolicy` to calculate the agreed expiry. It then reserves stock through `reserveIfAvailable`. Expiry processing uses `releaseIfReserved` only when the reservation is eligible and no other commitment applies.
-2. **Slice 3 — Offline reconciliation:** `OfflineReconciliationService` persists and retrieves offline entries, and delegates duplicate/stock checks to `ConflictChecker`. The checker uses `StockAvailabilityPort.getStatus` only. If all lines are clear, the service submits one complete `SaleRequest` to `SaleRecordingPort`; it does not create `Sale`/`SaleLine` records or mutate stock itself.
-3. **Slice 4 — Customer sale:** `SaleService` implements `SaleRecordingPort`. It validates the request and idempotency key, resolves item and maker details through `ProductCatalogue`, reads stock status, creates the sale and its lines, and asks `StockAvailabilityPort.sellAllIfAvailable` to perform the all-or-nothing stock transition. `SaleRepository` stores the sale and idempotency result.
+1. **Slice 1 — Manage Reservation:** `ReservationService` validates reservation details, reads stock availability through `StockAvailabilityPort`, and checks existing reservations through `ReservationRepository`. It obtains the current time from `Clock` and delegates expiry calculation to `ReservationPolicy`. It creates an Active `Reservation` and requests `reserveIfAvailable`. Reservation persistence and stock changes must be consistent. During expiry evaluation, eligible reservations become Expired and `releaseIfReserved` releases the associated stock only when no other commitment applies.
+2. **Slice 3 — Reconcile Offline Transactions:** `OfflineReconciliationService` records offline entries through `OfflineTransactionRepository`. Each entry has a unique internal `entryId`; `offlineRef` is retained for duplicate-reference checks and `submissionId` supports safe resubmission. `ConflictChecker` checks duplicate references and reads stock through `StockAvailabilityPort.getStatus`. Duplicate or conflicting transactions are referred to the Manager without recording a new sale. A clean transaction is submitted as one complete `SaleRequest` to `SaleRecordingPort`, using `entryId` as its idempotency key. A confirmed `Recorded(saleRef)` result permits the transaction to become Reconciled. Manager resolution records the decision and note without creating a sale.
+3. **Slice 4 — Process a Customer Sale:** `SaleService` implements `SaleRecordingPort`. It validates the request and idempotency key, obtains product and maker details from `ProductCatalogue`, and checks availability through `StockAvailabilityPort`. It creates `Sale` and `SaleLine` data, retaining product and maker attribution, quantity, selling price and any applicable discount. `sellAllIfAvailable` performs the all-or-nothing stock transition, and `SaleRepository` persists the sale and its idempotency result. `Recorded(saleRef)` is returned only after the sale and stock changes have been committed consistently.
 
 ## Operation alignment
 
-The operations shown on the classes retain the names used in the current object-interaction diagrams and operation contracts, including:
+The integrated model uses the operation names and signatures defined by the shared contracts and represented in the class diagram:
 
-- `getStatus`, `reserveIfAvailable`, `releaseIfReserved`, `sellAllIfAvailable`;
-- `recordSale(request: SaleRequest)`;
-- `recordReservation`, `evaluateExpiry`, `calculateExpiry`, `findActiveByItemCode`, `findAllActive`;
-- `enterOfflineTransaction`, `reconcile`, `resolve`, `check`, `existsOtherWithRef`;
-- `findItem`, `findResultByIdempotencyKey`, `persist`, `now`.
+| Class / interface | Operations |
+|---|---|
+| `StockAvailabilityPort` | `getStatus(itemCode)`, `reserveIfAvailable(itemCode)`, `releaseIfReserved(itemCode)`, `sellAllIfAvailable(stockLines, idempotencyKey)` |
+| `SaleRecordingPort` | `recordSale(request: SaleRequest)` |
+| `Clock` | `now()` |
+| `ReservationService` | `recordReservation(itemCode, customerRef, conditions)`, `evaluateExpiry(asOf)` |
+| `ReservationPolicy` | `calculateExpiry(currentDateTime)` |
+| `ReservationRepository` | `findActiveByItemCode(itemCode)`, `findAllActive()`, `save(reservation)`, `update(reservation)` |
+| `OfflineReconciliationService` | `enterOfflineTransaction(submissionId, offlineRef, saleDate, processedBy, lines)`, `reconcile(entryId)`, `resolve(entryId, decision, note)` |
+| `OfflineTransactionRepository` | `findByEntryId(entryId)`, `findBySubmissionId(submissionId)`, `existsOtherWithRef(offlineRef, entryId)`, `save(transaction)`, `countByStatus(status)` |
+| `ConflictChecker` | `check(transaction)` |
+| `SaleService` | `recordSale(request: SaleRequest)` |
+| `ProductCatalogue` | `findItem(itemCode)` |
+| `SaleRepository` | `findResultByIdempotencyKey(key)`, `persist(sale, idempotencyKey)` |
 
 ## Operation / sequence correspondence
 
-The public and collaborator operations in the integrated diagram cover the messages used by the current object-interaction sequences:
+The following table defines the mapping from use-case interactions to operations in the integrated class model. The shared contracts provide the canonical names at integration boundaries.
 
 | Slice | Sequence message(s) | Receiving class / interface |
 |---|---|---|
-| 1 — Reserve | `recordReservation`, `validateRequest`, `getStatus`, `findActiveByItemCode`, `now`, `calculateExpiry`, `create`, `reserveIfAvailable`, `save` | `ReservationService`, `StockAvailabilityPort`, `ReservationRepository`, `Clock`, `ReservationPolicy`, `Reservation` |
-| 1 — Expiry | `evaluateExpiry`, `findAllActive`, `getAgreedExpiry`, `getStatus`, `releaseIfReserved`, `expire`, `update`, `keepActive` | `ReservationService`, `ReservationRepository`, `Reservation`, `StockAvailabilityPort` |
-| 3 — Reconcile | `reconcile`, `requireCoordinatorRole`, `findByEntryId`, `check`, `existsOtherWithRef`, `getStatus`, `recordSale`, `markReconciled`, `refer`, `save` | `OfflineReconciliationService`, `OfflineTransactionRepository`, `ConflictChecker`, `StockAvailabilityPort`, `SaleRecordingPort`, `OfflineTransaction` |
-| 3 — Enter / resolve | `enterOfflineTransaction`, `findBySubmissionId`, `resolve`, `requireManagerRole`, `now` | `OfflineReconciliationService`, `OfflineTransactionRepository`, `OfflineTransaction`, `Clock` |
-| 4 — Sale | `recordSale`, `validateRequestAndIdempotency`, `findResultByIdempotencyKey`, `findItem`, `getStatus`, `now`, `create`, `addLine`, `sellAllIfAvailable`, `persist` | `SaleRecordingPort`, `SaleService`, `SaleRepository`, `ProductCatalogue`, `StockAvailabilityPort`, `Clock`, `Sale`, `SaleLine` |
+| 1 — Reserve | `recordReservation`, `validateRequest` | `ReservationService` |
+| 1 — Reserve | `getStatus`, `reserveIfAvailable` | `StockAvailabilityPort` |
+| 1 — Reserve | `findActiveByItemCode`, `save` | `ReservationRepository` |
+| 1 — Reserve | `now`, `calculateExpiry`, `create` | `Clock`, `ReservationPolicy`, `Reservation`, respectively |
+| 1 — Expiry | `evaluateExpiry`, `keepActive` | `ReservationService` |
+| 1 — Expiry | `findAllActive`, `update` | `ReservationRepository` |
+| 1 — Expiry | `getAgreedExpiry`, `expire` | `Reservation` |
+| 1 — Expiry | `getStatus`, `releaseIfReserved` | `StockAvailabilityPort` |
+| 3 — Enter / reconcile / resolve | `enterOfflineTransaction`, `reconcile`, `resolve`, `requireCoordinatorRole`, `requireManagerRole` | `OfflineReconciliationService` |
+| 3 — Enter / reconcile / resolve | `findBySubmissionId`, `findByEntryId`, `existsOtherWithRef`, `save`, `countByStatus` | `OfflineTransactionRepository` |
+| 3 — Reconcile | `check`, `getStatus`, `recordSale` | `ConflictChecker`, `StockAvailabilityPort`, `SaleRecordingPort`, respectively |
+| 3 — Entry and state changes | `create`, `markReconciled`, `refer`, `resolve` | `OfflineTransaction` |
+| 3 — Entry / resolution timestamps | `now` | `Clock` |
+| 4 — Sale | `recordSale` | `SaleRecordingPort`, implemented by `SaleService` |
+| 4 — Sale | `validateRequestAndIdempotency` | `SaleService` |
+| 4 — Sale | `findResultByIdempotencyKey`, `persist` | `SaleRepository` |
+| 4 — Sale | `findItem`, `getStatus`, `sellAllIfAvailable`, `now` | `ProductCatalogue`, `StockAvailabilityPort` (both stock operations), `Clock` |
+| 4 — Sale | `create`, `addLine` | `Sale` (`create` and `addLine`), `SaleLine` (`create`) |
 
-The `create` messages for `Reservation`, `Sale`, and `SaleLine` are modelled as creation operations on the corresponding entity classes. The result types in the diagram make the contract's documented business outcomes and technical outcomes visible without changing their established names.
+The `create` messages for `Reservation`, `OfflineTransaction`, `Sale` and `SaleLine` represent creation operations on the corresponding entity classes. `Sale.addLine(line)` adds the created line to its sale aggregate.
 
-## Design boundaries and unresolved points
+### Shared naming conventions
 
-- Slice 3 depends on `SaleRecordingPort`, not on `SaleService`, `SaleRepository`, `Sale`, or `SaleLine` directly.
-- All three slices depend on the same `StockAvailabilityPort` and `Clock` abstractions. The concrete stock and clock providers are not named in the current source documents, so the diagram does not invent provider classes.
-- Slice 3 is a read-only consumer of stock. Only the sale-recording flow in Slice 4 performs the stock transition to `Sold`.
-- The sale request contains the shared fields `idempotencyKey`, `processedBy`, `channel`, optional `customerRef`, conditional `saleDate`, optional `sourceRef`, and one or more lines.
-- `Recorded(saleRef)` and `Rejected(reason)` are the business outcomes of `SaleRecordingPort`. Technical failures remain distinct from business refusals.
-- All-or-nothing stock updates are required, but the mechanism that makes `SaleRepository` persistence and stock persistence atomic (or safely compensatable) is still unresolved. The diagram does not imply that this has already been implemented.
-- The exact `itemCode` / `quantity` semantics, reservation expiry policy/calendar, and reservation-holder sale policy remain open in the existing decision log / open questions.
-- UC-10 / Slice 3 remains a proposed design pending PB-01 / Q-SH-08 confirmation.
+- Reservation stock transitions use `reserveIfAvailable` and `releaseIfReserved`, rather than the older `markReserved` and `release` message names.
+- `Clock` supplies time through `now()` only; working-day calculations belong to `ReservationPolicy`.
+- Offline reconciliation and resolution select records by `entryId`, not by the potentially repeated `offlineRef`. Repository lookup uses `findByEntryId`.
+- Stock availability queries use `getStatus(itemCode)`.
+- Offline sale recording uses `recordSale(request: SaleRequest)` and the returned `saleRef`.
+- Batch stock updates use `sellAllIfAvailable(stockLines, idempotencyKey)`, where each `StockLine` contains `itemCode` and `quantity`.
 
-## UML modelling note
+## Design boundaries and consistency rules
 
-`StockOperationResult`, `StockUpdated`, `StockRejected`, `ReservationResult`, `ValidationResult`, `CatalogueItemDetails`, and `PersistenceResult` are explicit design-level UML types used to make the documented operations and outcomes readable. Their final implementation names and shapes require group agreement. They do not change the outcome names already defined in `design/shared-interface-catalogue.md` and `design/operation-error-catalogue.md`.
+- Slice 3 depends on `SaleRecordingPort`, not directly on `SaleService`, `SaleRepository`, `Sale` or `SaleLine`.
+- The three slices share `StockAvailabilityPort` and `Clock`. Only the stock provider performs stock state transitions; Slice 3 is a read-only consumer of stock.
+- The stock status vocabulary is `Available`, `Reserved`, `Sold` and `Unknown`. Reserved and Sold items are not eligible for sale within this design scope. Unknown identifies an unrecognised item code.
+- A `SaleRequest` contains `idempotencyKey`, `processedBy`, `channel`, optional `customerRef`, conditional `saleDate`, optional `sourceRef` and one or more `SaleRequestLine` objects. Each line contains `itemCode`, `quantity`, `soldPrice` and optional `discountAmount`.
+- `Recorded(saleRef)` and `Rejected(reason)` are the expected business outcomes of `SaleRecordingPort`. Technical failures are reported separately and must not be interpreted as confirmation of a sale.
+- Repeating the same sale request with the same idempotency key and payload returns the original recorded result. Reusing the key with a different payload is rejected with `IdempotencyKeyConflict`. Offline reconciliation retries retain the original `entryId` as their sale idempotency key.
+- The offline transaction lifecycle is `AwaitingReconciliation`, `Reconciled`, `ReferredToManager` and `Resolved`. Only a confirmed sale permits reconciliation; Manager resolution does not create a sale.
+- Sale recording requires all-or-nothing consistency across sale persistence, the idempotency result and stock changes. Reservation creation and expiry likewise require consistent reservation and stock changes. The class diagram specifies these guarantees at design level; the underlying transaction or compensation mechanism is outside its modelling scope.
+- `ReservationPolicy` owns expiry and working-day calculations. No universal reservation duration is hard-coded into the application service or the `Clock` interface.
+- Stock quantity and pricing validation follow the shared sale and stock contracts. The class diagram retains `itemCode` and `quantity` without defining a new inventory storage model or additional pricing policy.

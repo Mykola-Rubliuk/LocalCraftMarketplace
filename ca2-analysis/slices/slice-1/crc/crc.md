@@ -1,28 +1,52 @@
-## ReservationService
-**Responsibilities:** receive reservation request; validate customer details and conditions; check item availability; check for conflicting active reservations; calculate agreed expiry through ReservationPolicy; coordinate reservation creation; update item status to Reserved; evaluate reservation expiry; release expired reservations where no other commitment applies; return explicit results.
-**Collaborators:** Reservation, ReservationRepository, ReservationPolicy, StockAvailabilityPort, Clock.
+## ReservationService ##
+**Responsibilities:**
+- Receive and coordinate reservation requests.
+- validateRequest(itemCode, customerRef, conditions) — validate the reservation request details, ensuring required customer information and reservation conditions are supplied and valid.
+- Check for conflicting active reservations.
+- Obtain the current date and time through Clock.
+- Coordinate reservation expiry calculation through ReservationPolicy.
+- Coordinate reservation creation and persistence.
+- Coordinate stock reservation.
+- Evaluate reservation expiry and coordinate stock release.
+- Return explicit success or rejection results.
+  Collaborators: Reservation, ReservationRepository, ReservationPolicy, StockAvailabilityPort, Clock.
 
+## Reservation ##
+**Responsibilities:**
+- Maintain reservationId, itemCode, customer reference, conditions, status and agreed expiry date.
+- Maintain reservation status (Active or Expired).
+- Identify whether the reservation has expired based on its agreed expiry and the supplied date/time.
+  Collaborators: ReservationService, ReservationPolicy.
 
-## Reservation
-**Responsibilities:** know reservationId, itemCode, customer reference, conditions, status and agreed expiry date; maintain reservation status; identify whether the reservation has expired.
-**Collaborators:** ReservationService, ReservationPolicy.
+## ReservationPolicy ##
+**Responsibilities:**
+- calculateExpiry(currentDateTime) — calculate the reservation expiry according to the approved reservation policy.
+- Apply the approved expiry rules.
+- Keep expiry calculations separate from ReservationService.
+- Determine the agreed expiry using the supplied current date/time.
+  Collaborators: ReservationService, Clock.
 
+## ReservationRepository ##
+**Responsibilities:**
+- Store and retrieve Reservation records.
+- findActiveByItemCode(itemCode) — retrieve an existing active reservation for the selected item to identify conflicting reservations.
+- findAllActive() — retrieve all active reservations for expiry evaluation.
+- save(reservation) — persist a new reservation.
+- update(reservation) — persist reservation status changes.
+  Collaborators: ReservationService, Reservation.
 
-## ReservationPolicy
-**Responsibilities:** calculate the agreed reservation expiry date; apply the approved expiry rules; ensure expiry calculations are not hard-coded into ReservationService.
-**Collaborators:** ReservationService, Clock.
+## StockAvailabilityPort ##
+**Responsibilities:**
+- Provide shared stock availability operations and stock state transitions.
+- reserveIfAvailable(itemCode) — reserve an item only when its current status is Available.
+- releaseIfReserved(itemCode) — release an item only when it is Reserved and no other commitment prevents its release.
+- Maintain valid stock states (Available, Reserved or Sold).
+- Report ItemNotFound and relevant stock-operation failures.
+  Collaborators: ReservationService and other slices.
 
-
-## ReservationRepository
-**Responsibilities:** store and retrieve Reservation records; find active reservations by itemCode; retrieve active reservations for expiry evaluation; update reservation status.
-**Collaborators:** ReservationService, Reservation.
-
-
-## StockAvailabilityPort
-**Responsibilities:** provide shared stock availability queries and stock state transitions; return item status (Available, Reserved or Sold); mark items Reserved or Sold; release items when appropriate; report ItemNotFound.
-**Collaborators:** ReservationService and other slices.
-
-
-## Clock
-**Responsibilities:** provide the current date and time; calculate the number of working days between two dates; support consistent reservation expiry calculations and testing.
-**Collaborators:** ReservationService, ReservationPolicy.
+## Clock ##
+**Responsibilities:**
+- Clock.now() — provide the current date and time.
+- Provide a consistent source of time for reservation operations.
+- Support controlled or fixed date/time values during testing.
+- Avoid direct system-clock dependencies in reservation logic.

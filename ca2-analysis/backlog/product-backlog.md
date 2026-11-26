@@ -67,7 +67,6 @@ Priorities are provisional and should be confirmed by the group.
 For items selected for an iteration:
 
 - **Owner:** Responsible for completing the item.
-- **Reviewer:** Another team member responsible for checking the result.
 - **TBC:** Must be assigned by the group before the item enters an active iteration.
 
 The four Slice owners are assigned according to the group's agreed division of work.
@@ -109,7 +108,6 @@ As a Shop Volunteer, I want to reserve an available item for a customer so that 
 
 **Status:** Backlog  
 **Owner:** Slice 1 owner  
-**Reviewer:** TBC
 
 ---
 
@@ -141,7 +139,6 @@ As a customer, I want each line of my order to have its own fulfilment status so
 
 **Status:** Backlog  
 **Owner:** Slice 2 owner  
-**Reviewer:** TBC
 
 ---
 
@@ -173,7 +170,6 @@ As a Manager, I want proposed changes to commissioned work recorded separately f
 
 **Status:** Backlog — not selected as a principal CA2 slice  
 **Owner:** TBC  
-**Reviewer:** TBC
 
 ---
 
@@ -210,7 +206,6 @@ As an authorised Shop Volunteer, I want to record a customer sale with its item 
 
 **Status:** Backlog  
 **Owner:** Slice 4 owner  
-**Reviewer:** TBC
 
 ---
 
@@ -246,7 +241,6 @@ As an authorised Market Coordinator, I want offline market transactions to be re
 
 **Status:** Backlog — group validation required  
 **Owner:** Slice 3 owner  
-**Reviewer:** TBC
 
 ---
 
@@ -276,7 +270,6 @@ Each task must identify its purpose, input artefacts, expected output, owner, re
 - Design rationale and unresolved questions.
 
 **Owner:** Slice 1 owner  
-**Reviewer:** Another group member  
 **Priority:** High  
 **Status:** Backlog
 
@@ -309,7 +302,6 @@ Each task must identify its purpose, input artefacts, expected output, owner, re
 - Design rationale and unresolved approval questions.
 
 **Owner:** Slice 2 owner  
-**Reviewer:** Another group member  
 **Priority:** High  
 **Status:** Backlog
 
@@ -343,7 +335,6 @@ Each task must identify its purpose, input artefacts, expected output, owner, re
 - Design rationale and unresolved questions.
 
 **Owner:** Slice 3 owner  
-**Reviewer:** Another group member  
 **Priority:** High  
 **Status:** Backlog
 
@@ -377,7 +368,6 @@ Each task must identify its purpose, input artefacts, expected output, owner, re
 - Design rationale and unresolved questions.
 
 **Owner:** Slice 4 owner  
-**Reviewer:** Another group member  
 **Priority:** High  
 **Status:** Backlog
 
@@ -410,7 +400,6 @@ Each task must identify its purpose, input artefacts, expected output, owner, re
 - Recorded integration decisions.
 
 **Owner:** TBC — group assignment  
-**Reviewer:** TBC  
 **Priority:** High  
 **Status:** Backlog
 
@@ -440,7 +429,6 @@ Each task must identify its purpose, input artefacts, expected output, owner, re
 - Updated design rationale.
 
 **Owner:** TBC — group assignment  
-**Reviewer:** TBC  
 **Priority:** High  
 **Status:** Backlog
 
@@ -471,7 +459,6 @@ Each task must identify its purpose, input artefacts, expected output, owner, re
 - Recorded gaps and unresolved traceability issues.
 
 **Owner:** TBC — group assignment  
-**Reviewer:** TBC  
 **Priority:** High  
 **Status:** Backlog
 
@@ -505,7 +492,6 @@ Each task must identify its purpose, input artefacts, expected output, owner, re
 - Links to editable source artefacts and exported diagrams.
 
 **Owner:** TBC — group assignment  
-**Reviewer:** TBC  
 **Priority:** High  
 **Status:** Backlog
 
@@ -536,7 +522,6 @@ Each task must identify its purpose, input artefacts, expected output, owner, re
 - Final `ca2-submission` tag or release.
 
 **Owner:** TBC — group assignment  
-**Reviewer:** All group members  
 **Priority:** High  
 **Status:** Backlog
 
@@ -572,7 +557,6 @@ Risk and Spike items investigate uncertainties that could affect the design. The
 **Affected artefacts:** UC-02, ReservationPolicy, reservation contracts, CRC Cards and sequence diagram.
 
 **Owner:** Slice 1 owner  
-**Reviewer:** TBC  
 **Priority:** High  
 **Status:** Backlog
 
@@ -598,7 +582,6 @@ Risk and Spike items investigate uncertainties that could affect the design. The
 **Affected artefacts:** Domain model, sale contract, stock availability contract, CRC Cards and traceability matrix.
 
 **Owner:** Slice 4 owner  
-**Reviewer:** Slice 1 owner  
 **Priority:** High  
 **Status:** Backlog
 
@@ -624,7 +607,6 @@ Risk and Spike items investigate uncertainties that could affect the design. The
 **Affected artefacts:** UC-10, Slice 3 sequence diagram, CRC Cards, operation contracts and decision log.
 
 **Owner:** Slice 3 owner  
-**Reviewer:** TBC  
 **Priority:** High  
 **Status:** Backlog
 
@@ -649,7 +631,6 @@ Risk and Spike items investigate uncertainties that could affect the design. The
 **Affected artefacts:** Sale, SaleLine, sale operation contract, Slice 4 CRC Cards and traceability.
 
 **Owner:** Slice 4 owner  
-**Reviewer:** TBC  
 **Priority:** High  
 **Status:** Backlog
 
@@ -674,7 +655,6 @@ Risk and Spike items investigate uncertainties that could affect the design. The
 **Affected artefacts:** Shared interface catalogue, package diagram, operation contracts and design class diagram.
 
 **Owner:** TBC — group assignment  
-**Reviewer:** TBC  
 **Priority:** High  
 **Status:** Backlog
 

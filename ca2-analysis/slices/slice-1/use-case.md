@@ -1,57 +1,66 @@
-# UC-02 — Manage a Reservation
+# **UC-02 — Reserve an item**
 
-**Primary actor:** Shop Volunteer.  
-**Goal:** Reserve an available item for a customer and retain an accurate reservation record.  
-**Trigger:** A customer asks to reserve an item for later collection or purchase.  
-**Related:** US-01; FR-04, FR-05; SC-01, SC-02, SC-03; Q-01, Q-SH-03.
+**Primary actor:** Shop Volunteer.\
+**Goal:** Reserve an available item for a customer and retain an accurate reservation record.\
+**Trigger:** A customer asks to reserve an item for later collection or purchase.\
+**Related:** US-01; FR-04, FR-05; SC-01, SC-02, SC-03; A-01, A-02; Q-01.
 
-## Preconditions
-- The processor is authorised to create reservations.
-- Customer reference and required reservation conditions are supplied.
-- `itemCode` is checked through the shared `StockAvailabilityPort`.
-- The item's status is `Available`.
-- No active reservation already exists for the item.
-- An approved `ReservationPolicy` is available.
+## **Preconditions**
 
-## Main success flow
-1. Volunteer submits `itemCode`, customer reference and reservation conditions.
-2. `ReservationService` validates the required details.
-3. `ReservationService` calls `StockAvailabilityPort.getStatus(itemCode)`.
-4. `ReservationService` checks `ReservationRepository` for an active reservation.
-5. `ReservationService` obtains the current time through `Clock.now()`.
-6. `ReservationPolicy` calculates the agreed expiry using the approved policy/calendar.
-7. `ReservationService` creates the Reservation with Active status.
-8. `ReservationService` requests `StockAvailabilityPort.reserveIfAvailable(itemCode)`.
-9. The reservation and stock transition are persisted consistently.
-10. System returns `ReservationConfirmed(reservationId, agreedExpiry)`.
+- Processor is authorised to create reservations.
+- Item code identifies an existing stock item.
+- Customer reference and reservation conditions are supplied.
+- Item is currently Available under the shared stock policy.
+- No conflicting active reservation exists for the item.
+- An approved reservation policy is available to calculate the agreed expiry date.
 
-## Alternative / refusal flows
-- A1 — Missing customer reference or conditions: reject with `MissingDetails`; no reservation or stock change.
-- A2 — Unknown item: reject with `ItemNotFound`; no reservation.
-- A3 — Item is Reserved or Sold: reject with `ItemUnavailable`; no reservation.
-- A4 — Active reservation exists while stock appears Available: reject with `ConflictingReservation`; no stock change.
-- A5 — Expiry cannot be calculated: reject with `ReservationPolicyUnavailable`; no reservation or stock change.
-- A6 — Atomic reserve operation rejects because availability changed: reject with `ItemUnavailable`; no reservation is committed.
-- A7 — Persistence or stock update fails: report a technical failure and do not leave a partial reservation/stock change.
+## **Main success flow**
 
-## Postconditions
-**Success:** one Active Reservation exists, linked to the item and customer; an agreed expiry is recorded; stock status is Reserved.  
-**Failure:** no new Reservation is committed; stock status remains unchanged.
+1. Volunteer submits the item code, customer reference and reservation conditions.
+2. ReservationService validates that the required details have been supplied.
+3. ReservationService checks that the item exists through StockAvailabilityPort.
+4. ReservationService checks the item's current availability.
+5. ReservationService checks ReservationRepository for an existing active reservation on the item.
+6. ReservationService obtains the current date through Clock.
+7. ReservationPolicy calculates the agreed expiry date using the approved reservation rules.
+8. ReservationService creates a Reservation record linked to the item and customer, with Active status and the agreed expiry date.
+9. ReservationService persists the reservation through ReservationRepository.
+10. ReservationService marks the item Reserved through StockAvailabilityPort.
+11. System returns `ReservationConfirmed` with the reservation reference and agreed expiry date.
 
-## Expiry evaluation
-1. `ReservationService` receives `evaluateExpiry(asOf)`; `asOf` may be supplied by the caller or obtained from `Clock.now()`.
-2. It retrieves active reservations from `ReservationRepository`.
-3. It compares each agreed expiry with `asOf`.
-4. An eligible reservation is changed to Expired.
-5. `StockAvailabilityPort.releaseIfReserved(itemCode)` is called only when no other commitment applies.
-6. The system returns the reservations successfully expired.
+## **Alternative / refusal flows**
 
-## Expiry postconditions
-**Success:** eligible reservations are Expired and their items are released where permitted. Reservations not yet expired remain Active. Repeated evaluation does not repeat the transition.
+- A1 — Missing customer reference: reject with `MissingDetails`; no reservation is created and stock remains unchanged.
+- A2 — Missing reservation conditions: reject with `MissingDetails`; no reservation is created and stock remains unchanged.
+- A3 — Unknown item: reject with `ItemNotFound`; no reservation is created.
+- A4 — Item already Reserved or Sold: reject with `ItemUnavailable`; no reservation is created.
+- A5 — Conflicting active reservation: reject with `ConflictingReservation`; no additional reservation is created.
+- A6 — Expiry cannot be calculated under the approved policy: reject the request; no reservation or stock status change occurs.
+- A7 — Reservation persistence or stock update fails: do not leave a partially completed reservation; reservation and stock state must remain consistent.
 
-## Unresolved
-- Confirm the approved expiry policy and working-day calendar (Q-01, Q-SH-03).
-- Confirm the exact boundary rule for expiry.
-- Confirm how the system checks for another commitment before releasing an item.
-- Confirm the transaction/compensation mechanism across ReservationRepository and StockAvailabilityPort.
+## **Postconditions**
+
+**Success:** one Active Reservation exists, linked to the item and customer; an agreed expiry date is recorded; the item is marked Reserved.\
+**Failure:** no new Reservation exists; no existing reservation is modified; stock status remains unchanged.
+
+## **Expiry evaluation**
+
+1. ReservationService receives an `evaluateExpiry(asOf)` request.
+2. ReservationService retrieves active reservations through ReservationRepository.
+3. Each active reservation's agreed expiry date is checked against `asOf`.
+4. Reservations whose expiry has been reached or passed are changed to `Expired`.
+5. The item is released through StockAvailabilityPort only if no other commitment applies.
+6. The system returns the list of reservations that were marked Expired.
+
+## **Expiry postconditions**
+
+**Success:** expired reservations have Expired status; eligible items are released; reservations that have not reached expiry remain Active.\
+**Repeated evaluation:** already expired reservations are not processed again, and no duplicate release occurs.
+
+## **Unresolved**
+
+- Confirm the approved reservation expiry policy; the proposed three-working-day policy is currently only used by the fixed test fake.
+- Confirm the exact boundary rule for expiry, such as whether a reservation expires at the start or end of the agreed expiry date.
+- Confirm how the system determines whether another commitment prevents an item from being released.
+- Confirm how reservation creation and stock status updates are kept atomic if one operation fails.
 - Confirm whether customer reference and reservation conditions are always mandatory.
