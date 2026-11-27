@@ -3,9 +3,9 @@
 
 | Submission information | Details |
 |---|---|
-| Module | [Official module title and code] |
+| Module | OOAD |
 | Assessment | CA2 — Collaborative Object-Oriented Design |
-| Group members | [Full names and student numbers of the four members] |
+| Group members | Mykola Rubliuk, Bogdan Byrdin, Marian Andrei Rogojina, Maryna Tarasova |
 | Repository | [LocalCraftMarketplace](https://github.com/Mykola-Rubliuk/LocalCraftMarketplace) |
 | Submission tag | `ca2-submission` |
 
@@ -13,23 +13,23 @@
 
 ## 1. Product Goal
 
-CA2 keeps the outcome already agreed in the [Product Goal](product-goal.md): enable authorised Kerry Makers Cooperative staff to maintain accurate records of products, stock availability, reservations, multi-maker order fulfilment and sales, including controlled reconciliation of offline market transactions. The value is fewer conflicting commitments, better visibility of order progress, reliable maker evidence, and confidential data staying restricted to authorised users.
+The group retained the [Product Goal](../docs/product-goal.md) established for the marketplace: enable authorised Kerry Makers Cooperative staff to maintain accurate records of products, stock availability, reservations, multi-maker order fulfilment and sales, including controlled reconciliation of offline market transactions. The intended outcomes are fewer conflicting commitments, better visibility of order progress, reliable evidence for makers and restricted access to confidential information.
 
-This follows the CA1 finding that spreadsheets, handwritten notes and messages were fragmenting the cooperative's records. CA2 narrows that down to a design for specific behaviours, not a different problem. The system supports staff; it doesn't replace production, collection or payment. Accurate records of commitments and transactions remain the measure of success.
+CA1 identified fragmented spreadsheets, handwritten records and messages as obstacles to reliable operational records. CA2 addresses this problem through the object-oriented design of selected behaviours rather than changing the underlying business goal. The system supports staff in recording decisions and transactions; physical production, collection and payment remain outside its responsibilities.
 
 ## 2. Scenario Selection and Agreed Baseline
 
-The group weighed Local Craft Marketplace against Renewable Energy Maintenance. Both gave room to model entities, states and exceptions; the maintenance scenario was more self-contained, but marketplace split more naturally into related workflows whose complexity could be managed by picking a few behaviours rather than every CA1 process.
+The group considered Local Craft Marketplace and Renewable Energy Maintenance Service. Both scenarios offered opportunities to model entities, state changes and exceptional behaviour. The maintenance scenario offered a focused context for equipment-related workflows, whereas the marketplace provided several distinct but connected business processes. Selecting a limited set of these processes made the wider marketplace domain manageable within CA2.
 
-Marketplace won because its workflows genuinely depend on each other: a reservation changes availability; a sale changes the same availability while preserving maker attribution; an order holds lines progressing at different speeds; an offline transaction can't be treated as an ordinary sale without checking existing commitments first. These dependencies give real responsibility allocation and contract-based consistency to design around, and they split sensibly across four contributors who still have to collaborate on one system.
+The marketplace was selected because its workflows have meaningful dependencies. Reservations affect stock availability; sales change that availability while preserving maker attribution; orders contain lines that progress independently; and offline transactions require reconciliation against existing commitments. These dependencies provide opportunities to demonstrate responsibility allocation, shared interfaces and consistency between related operations. They also allow individual design work to contribute to a common architecture instead of producing four unrelated subsystems.
 
-The [scenario-selection record](scenario-selection.md) carries the full comparison and approval of the four-slice scope. The [baseline change log](baseline-change-log.md) records UC-10 confirmed in scope through PB-01, reviewed with the lecturer — that's the repository's account of approval, with no separate signed confirmation included or claimed. The [agreed baseline restatement](agreed-baseline.md) indexes which CA1 actors, requirements, rules, assumptions and use cases are retained.
+The [scenario-selection record](../docs/scenario-selection.md) documents the comparison and records group approval of the scenario and four-slice scope. The [agreed baseline](../docs/agreed-baseline.md) identifies the retained CA1 actors, requirements, business rules, assumptions, use cases and scenarios. UC-10 is included in the documented group scope. The scenario-selection record provides the rationale for the scope, while the baseline restatement identifies the requirements carried forward into the design. The original requirement identifiers provide a common reference for the individual slices.
 
-The change log also standardises the CA1 use-case names and settles `saleRef` as the name for a successful sale result — consistent identifiers across slice boundaries avoid exactly the ambiguous traceability that's easy to introduce by accident. Scope approval and policy approval are separate things, though: D-CA2-18 and D-CA2-19 are confirmed, but reservation duration, item-quantity semantics, approval evidence and persistence mechanism are still open. Nothing here invents stakeholder answers to close those gaps.
+The design retains the CA1 use-case identifiers and uses `saleRef` consistently for successful sale recording. Common identifiers support traceability across individual slices and their shared interfaces. The [decision log](../decisions/decision-log.md) records architectural choices, alternatives and their rationale. The design distinguishes the scope of each use case from the technical details needed to support it. For example, the identity of the person recording a transaction is part of the business evidence, whereas the mechanism for obtaining that identity belongs to the design. Reservation duration, stock quantity semantics and the concrete persistence mechanism are documented as open questions and implementation considerations. This allows the selected behaviours to be described without fixing every detail of the underlying infrastructure.
 
 ## 3. Selected CA2 Design Scope
 
-Four use cases carry the CA2 work, chosen for business value, design complexity, and giving each member a substantial slice. Reservation and sale both touch shared stock; offline reconciliation exercises the same sale capability under less predictable conditions; order fulfilment shows an aggregate deriving status from independently changing lines. The common thread is accuracy of commitments and their evidence, not four unrelated subsystems.
+Four use cases were selected for their business value, design challenges and the opportunity for each member to own a substantial slice. Their common goal is accurate records of commitments, stock and transactions. The shared dependencies make them parts of one system rather than four separate designs.
 
 | Slice / canonical use case | Stakeholder value | Requirements / rules | Dependencies and selection reason |
 |---|---|---|---|
@@ -38,80 +38,74 @@ Four use cases carry the CA2 work, chosen for business value, design complexity,
 | 3 — UC-10 Reconcile Offline Transactions | Prevent loss and duplicate recording of offline sales | FR-13, NFR-05; A-08/A-10, BR-01, BR-05 | StockAvailabilityPort, SaleRecordingPort, Clock; cross-slice failure and retry behaviour |
 | 4 — UC-01 Process Customer Sale | Record valid sales with maker-attributable evidence | FR-01, FR-04, FR-10; BR-01 | StockAvailabilityPort, ProductCatalogue, Clock; atomic sale recording |
 
-The brief and the rubric describe scope differently — one to three significant use cases versus three to five substantial ones. Four sits inside the rubric's range and matches the four-member split.
-UC-04, as drafted, is narrowed to fulfilling existing orders rather than designing order creation itself — FR-06 gives structural context, FR-07 is the actual target. Public e-commerce, payments, accounting, delivery integration and automatic offline sync stay out of scope. The integrated class model currently covers Slices 1, 3 and 4; the Slice 2 branch documents intended behaviour but isn't a completed or merged design yet.
+The brief and the rubric describe scope differently — one to three significant use cases versus three to five substantial ones. Four falls within the rubric range and provides a substantial design thread for each member.
+UC-04 is limited to fulfilment of existing orders rather than order creation: FR-06 provides structural context and FR-07 is the direct behavioural target. Public e-commerce, payments, full accounting, delivery integration and automatic offline synchronisation remain outside scope. The integrated class diagram represents all four slices. Each slice has a use case, Gherkin, SSD, operation contracts, CRC, GRASP and object-interaction artefacts. Together, these artefacts provide complementary views of the expected behaviour and object responsibilities.
 
 ## 4. Behavioural Design
 
 ### 4.1 Slice 1 — UC-02 Manage Reservation
 
-A Shop Volunteer responds to a request to reserve an item. `recordReservation(itemCode, customerRef, conditions)` validates the input, checks stock status, and looks for an existing active reservation. Clock supplies the time; ReservationPolicy determines expiry. On success, a Reservation is created — reference, customer, conditions, Active status, agreed expiry — and the item moves from Available to Reserved.
+A Shop Volunteer records a customer's request to reserve an item. `recordReservation(itemCode, customerRef, conditions, userId)` checks the required details, existing reservations and stock availability. Clock supplies the current time, and ReservationPolicy calculates expiry. On success, the system creates an Active Reservation containing its reference, customer, conditions, expiry and the responsible volunteer's identifier. The item becomes Reserved before confirmation is returned.
 
-The success guarantee ties FR-05's reservation evidence to FR-04's availability rule: a reservation without reserved stock, or reserved stock without a reservation, is inconsistent either way, and both updates need one consistency boundary.
+This supports FR-04 and FR-05: the reservation record and stock status must agree. A failed persistence or stock update must not leave partial changes. `ConflictingReservation` indicates an existing active reservation, while `ItemUnavailable` covers other situations where the item cannot be reserved. Distinguishing them gives the volunteer a clearer explanation of the refusal.
 
-`evaluateExpiry(asOf)` pulls active reservations and compares expiry to the supplied time. An eligible reservation becomes Expired and releases its stock only if nothing else holds it — a repeat evaluation shouldn't redo an already-completed transition, which "Evaluate an expired reservation more than once" tests directly.
+`evaluateExpiry(asOf)` finds active reservations whose expiry has been reached. The reservation becomes Expired, and stock is released only if no other commitment applies. Repeating the operation must not release stock again. Gherkin covers repeated expiry, persistence failure and expiry with another commitment. The three-working-day examples illustrate the expiry policy without imposing a fixed duration on every reservation.
 
-One refusal needs tightening: the feature file expects `ConflictingReservation` whenever an active reservation exists, including when the item is Reserved — but the use case's alternative flow also allows an earlier `ItemUnavailable` result for the same Reserved-stock situation. Both can't apply at once; a clear precedence needs picking. The three-working-day examples in the Gherkin are test data, not an approved universal policy.
+The scenario “Evaluate an expired reservation more than once” is particularly useful because it checks the effect of repeating an operation rather than just the first successful result. Both operations have SSD, contract and internal interaction coverage. The interaction diagrams and contracts describe the reservation and expiry workflows from different perspectives. The remaining details concerning `userId`, rollback and technical failure results are captured as alignment findings in the integration review.
 
-Both operations have contracts, but there's no standalone SSD yet, and the interaction diagrams still need to match their stock-method names and working-day logic to the shared catalogue.
-
-**Evidence:** [Use case](../slices/slice-1/use-case.md), [Gherkin](../slices/slice-1/features/reservation.feature), [contract](../slices/slice-1/contracts/contract.md), [reserve interaction](../slices/slice-1/sequence/Reserve-Item.puml), [expiry interaction](../slices/slice-1/sequence/Expiry-evaluation.puml).
+**Evidence:** [Use case](../slices/slice-1/use-case.md), [Gherkin](../slices/slice-1/features/reservation.feature), [SSD](../slices/slice-1/ssd/ssd.puml), [contracts](../slices/slice-1/contracts/contract.md), [reserve interaction](../slices/slice-1/sequence/Reserve-Item.puml), [expiry interaction](../slices/slice-1/sequence/Expiry-evaluation.puml).
 
 ### 4.2 Slice 2 — UC-04 Manage Customer Order (Fulfil Order Lines)
 
-A Shop Volunteer records a line's progress once an item is finished, collected, or affected by a customer decision — the Maker finishes the item, the Customer approves changes offstage, neither needing a login. The order and lines already exist; FR-07 and BR-03 require each line's state to stay distinguishable, while BR-02 explains why different lines can belong to different makers.
+A Shop Volunteer updates an existing order when a maker finishes an item, a customer collects it, or a customer agrees to a substitution or cancellation. The Customer and Maker participate outside the system. FR-07 and BR-03 require independent line progress, while BR-02 allows different makers to contribute to the same order.
 
-The branch's SSD lists `viewOrder`, `markReady`, `recordCollection`, and `recordCustomerDecision`. Viewing exposes overall and line-level status; a progress call touches only its own line; a customer-decision call records a substitution or cancellation and its reason. The order becomes Completed only once every line is closed — BeingMade moves to Ready, Cancelled or Substituted; Ready moves to Collected, Cancelled or Substituted; those three are closed states, so Completed means every line reached closure, not that every item was actually collected.
+The SSD and contracts define `viewOrder`, `markReady`, `recordCollection` and `recordCustomerDecision`. Viewing does not change state. A successful modification affects only the selected line, records who changed it and when, and recalculates the order status.
 
-D-CA2-14 covers offstage approval and last-change accountability; D-CA2-15 requires a predefined decision reason, including `NotGiven`. A missing reason produces `Rejected(ReasonNotSupplied)`; an invalid transition produces `Rejected(InvalidStatusChange)` with no state change. These remain branch drafts — manager reversion and an editable reason list are future extensions, not current scope.
+A line moves from BeingMade to Ready and then Collected. Open lines may also become Cancelled or Substituted. These two states and Collected are closed states; the order becomes Completed only when every line is closed. Completion therefore does not necessarily mean every item was collected. The state diagram and Gherkin describe valid transitions and refusals. In particular, “Progress update leaves other lines unchanged” tests the independence of order lines, while “Closing the last open line completes the order” checks the aggregate completion rule. Invalid changes leave the order unchanged, and customer decisions require a predefined reason, including `NotGiven` where appropriate.
 
-The branch has no operation contracts, CRC, GRASP, or internal sequence diagram yet. The object design and the trusted source for last-change attribution are still undocumented.
+The order and changed line must be saved consistently. Clock supplies the timestamp, while CurrentUser is represented in the Slice 2 object design as the source of volunteer identity (D-CA2-18). Keeping the identity lookup separate from the line-change operations avoids passing a volunteer identifier as an additional input to each operation. Customer approval is recorded rather than independently verified; manager reversion and editable reasons remain outside the selected scope.
 
-**Evidence:** separate `slice-2-fulfil-order-lines` archive — `use-case.md`, `features/order-fulfilment.feature`, `ssd/ssd.puml`; branch decisions D-CA2-14–17. CA1 [SC-04](../../ca1-analysis/features/marketplace.feature) and CA2 PB-05/US-02 give the baseline links.
+**Evidence:** [Use case](../slices/slice-2/use-case.md), [Gherkin](../slices/slice-2/features/order-fulfilment.feature), [SSD](../slices/slice-2/ssd/ssd.puml), [contracts](../slices/slice-2/contracts/operation-contracts.md), [CRC](../slices/slice-2/crc/crc.md), [GRASP](../slices/slice-2/grasp/grasp.md), [interactions](../slices/slice-2/sequence/sequence.puml), [state diagram](../slices/slice-2/state/order-line-state.puml).
 
 ### 4.3 Slice 3 — UC-10 Reconcile Offline Transactions
 
-Offline market forms get filled in by hand during outages. Once connectivity returns, a Market Coordinator enters them, and the system validates the offline reference, sale date, items and prices. Each entry gets a unique internal `entryId`; `offlineRef` is kept as business evidence and can legitimately repeat on a duplicate form, while `submissionId` tells a retry apart from a genuinely new entry sharing a reference.
+A Market Coordinator enters handwritten offline sales after connectivity returns. `enterOfflineTransaction` validates the reference, transaction date, items and prices. Each entry has a unique `entryId`, while `offlineRef` preserves the original reference. `submissionId` distinguishes a retry from a separate form with the same reference.
 
-A fresh entry starts AwaitingReconciliation; a repeated reference goes straight to ReferredToManager. During reconciliation, ConflictChecker checks every line for duplicates and stock status — a Sold, Reserved or Unknown item blocks the whole offline sale. A clean record produces one `SaleRequest` through SaleRecordingPort, and only `Recorded(saleRef)` lets it become Reconciled; the sale service, not the reconciliation controller, actually creates the sale.
+A new entry normally starts AwaitingReconciliation; duplicate references are referred to the Manager. Reconciliation and resolution identify entries by `entryId`, avoiding ambiguity. ConflictChecker checks duplicates and stock availability. Sold, Reserved or Unknown stock prevents a new sale. Slice 3 delegates sale recording to SaleRecordingPort and marks an entry Reconciled only after `Recorded(saleRef)`.
 
-The Manager reviews referred records and logs a decision, a note, who made it and when; status becomes Resolved without an automatic sale — keeping exception-handling separate from payment correction, which stays outside the system. "Refer a duplicate offline transaction" and "Manager resolves a referred offline transaction" show the accountability goal behind FR-13 and NFR-05.
+The original SaleRequest is saved and reused during retries, using `entryId` as its idempotency key and `offlineRef` as its source reference. `findRecordedResult(request)` checks for an earlier successful sale before stock conflicts are evaluated. If a sale already exists, its reference is recovered without recording another sale. An absent result permits normal checks; a technical lookup failure leaves the entry retryable. This prevents a lost success response from being mistaken for a new stock conflict.
 
-A technical failure isn't a business conflict — a timeout doesn't prove a sale failed. The design needs a stable idempotency key and retryable state, but its stock pre-check could currently block a retry from reaching SaleRecordingPort after an earlier attempt actually succeeded. A recovery-first lookup is needed before treating Sold stock as a fresh conflict — a flagged risk, not something implemented here.
-
-There's also a genuine signature mismatch: the class model identifies reconciliation and resolution by `entryId`, while the SSD and operation contracts use `offlineRef`. A unique entry identity is the safer basis for these calls, so the documents need bringing into line. The `saleRef` naming is at least already consistent following the baseline correction.
+The Manager resolves a referral by recording a decision, note, author and timestamp. Resolution does not automatically create a sale. The duplicate, resolution and retry scenarios support FR-13 and NFR-05. Referring a duplicate rather than silently discarding it preserves evidence for management review, even when the submitted transaction cannot be accepted as a sale. Consistent identification of authorised callers remains an open integration issue.
 
 **Evidence:** [Use case](../slices/slice-3/use-case.md), [Gherkin](../slices/slice-3/features/offline-reconciliation.feature), [SSD](../slices/slice-3/ssd/ssd.puml), [contracts](../slices/slice-3/contracts/operation-contracts.md), [object interaction](../slices/slice-3/sequence/sequence.puml).
 
 ### 4.4 Slice 4 — UC-01 Process Customer Sale
 
-A Shop Volunteer, or a Market Coordinator at an event, records an agreed purchase. `recordSale(request: SaleRequest): SaleRecordingResult` takes an idempotency key, processor, channel, optional customer/source references, a sale date where relevant, and one or more lines with item code, quantity, sold price and optional discount.
+A Shop Volunteer or Market Coordinator records a purchase through `recordSale(request: SaleRequest)`. The request contains the processor, channel, idempotency key, optional customer and source references, and the sale lines. Each line identifies the item, quantity, actual price and optional discount.
 
-SaleService validates the request, checks idempotency, resolves product and maker details through ProductCatalogue, and checks stock for every line. Only once all lines pass does it create the Sale and SaleLine objects and coordinate the all-or-nothing stock transition; SaleRepository keeps the sale and its idempotency result. Success returns the unique `saleRef` and confirms Completed/Sold status.
+SaleService validates the request, checks idempotency, obtains product and maker details from ProductCatalogue and checks stock. When all lines are valid, it creates the Sale and SaleLine objects and coordinates the stock update. SaleRepository retains the sale and its idempotency evidence. Success returns a unique `saleRef` and confirms the completed sale and Sold stock.
 
-Each line keeps maker attribution and the actual transaction amounts rather than relying on current list price — that's what makes BR-01 and FR-10 real evidence instead of a snapshot that could drift. FR-04 follows from making sold items unavailable for any other commitment. For offline purchases, the historical `saleDate` stays distinct from `recordedAt`.
+Retaining maker attribution and actual transaction amounts supports BR-01 and FR-10. Updating availability supports FR-04. For offline sales, the original sale date remains distinct from the recording time. Gherkin covers sales involving multiple makers and rejection of the whole sale when one item is unavailable. Empty requests, invalid amounts or quantities, missing maker details and unauthorised processing are also refused. Reserved items are excluded from ordinary sales under the current stock rules.
 
-"Record a sale containing items from two makers" shows the normal path; "Reject the entire sale when one item is unavailable" establishes that one bad line can't leave a partial sale behind. Other refusals: NoLines, ItemNotFound, MissingMakerAttribution, bad monetary values, bad quantities, unauthorised processing. Reserved items currently aren't sellable under the shared convention — pending the still-open reservation-holder policy.
-
-The idempotency contract needs the original result returned for a repeated key and payload, and rejection for a different payload reusing the same key — but the class model doesn't yet show what payload-comparison data gets stored to make that check work, and it doesn't say where the trusted processor identity comes from. The provider's atomic stock transition also doesn't by itself guarantee atomicity across sale repository and stock storage — the contract states the guarantee; nothing here proves an implementation delivers it.
+OC-4.1 specifies that a matching repeated request returns the original result, while a changed request with the same key is rejected. IdempotencyRecord stores the key, request fingerprint and original sale reference for this comparison. The check must take place before stock validation on a retry, because the first successful sale may already have changed the stock status. OC-4.2 defines read-only `findRecordedResult(request)` for offline reconciliation. Both operations distinguish technical failures from business refusals. The sale and stock changes must be consistent; concrete transaction handling and cross-slice identity consistency are further design considerations.
 
 **Evidence:** [Use case](../slices/slice-4/use-case.md), [Gherkin](../slices/slice-4/features/customer-sale.feature), [SSD](../slices/slice-4/ssd/ssd.puml), [contract](../slices/slice-4/contracts/operation-contracts.md), [object interaction](../slices/slice-4/sequence/sequence.puml).
 
 ## 5. Responsibility and Object Design
 
-The [integrated class diagram](../design/integrated-design-class-diagram.puml) and its [description](../design/integrated-design-class-diagram.md) lay out the three-slice model and how messages map to operations. One housekeeping note: the `.puml` source is missing its closing `@enduml`, needed before the diagram will actually render.
+The [integrated class diagram](../design/integrated-design-class-diagram.puml) and its [description](../design/integrated-design-class-diagram.md) represent the four-slice object model and the shared capabilities through which the slices collaborate. The diagram is a design reference rather than a specification of concrete database or authentication infrastructure.
 
 ### 5.1 Principal CRC responsibilities
 
-This picks out main responsibilities rather than every card. UC-04 rows describe an intended design from the branch and backlog, not finished CRC cards.
+The following table summarises the principal responsibilities documented in the individual CRC cards.
 
 | Class / capability | Principal responsibility | Collaborators |
 |---|---|---|
 | ReservationService | Coordinate reservation and expiry operations | Reservation, ReservationPolicy, ReservationRepository, StockAvailabilityPort, Clock |
 | Reservation | Retain customer, item, conditions, status and expiry | ReservationService, ReservationRepository |
 | ReservationPolicy | Calculate agreed expiry from policy | ReservationService; calendar policy |
-| OrderFulfilmentService (intended) | Coordinate order lookup and line changes | CustomerOrder, OrderLine; identity/time source to be specified |
-| CustomerOrder / OrderLine (intended) | Retain lines, line status and derived order progress; record decisions | Each other; fulfilment controller |
+| OrderFulfilmentService | Coordinate order lookup and line changes | CustomerOrder, CustomerOrderRepository, Clock, CurrentUser (Slice 2) |
+| CustomerOrder / OrderLine | Retain lines, line status and derived order progress; record decisions | Each other; fulfilment controller |
 | OfflineReconciliationService | Coordinate entry, conflict checks, reconciliation and manager resolution | OfflineTransaction, ConflictChecker, repository, SaleRecordingPort, Clock |
 | OfflineTransaction | Retain form details, lifecycle, referral and resolution evidence | OfflineLine, controller, repository |
 | ConflictChecker | Detect duplicate references and unavailable items | OfflineTransactionRepository, StockAvailabilityPort |
@@ -120,86 +114,84 @@ This picks out main responsibilities rather than every card. UC-04 rows describe
 
 ### 5.2 Significant GRASP decisions
 
-**Controller — application services (D-CA2-01).** ReservationService, OfflineReconciliationService and SaleService each receive the system events for their own use case. Letting entities coordinate their own repositories and stock access would tangle domain objects with infrastructure; one generic controller would just centralise unrelated workflows. Use-case controllers keep the coordination path explicit and leave entities focused on their own state.
+**Controller — application services (D-CA2-01).** ReservationService, OrderFulfilmentService, OfflineReconciliationService and SaleService each receive the system events for their own use case. Giving entities responsibility for repositories and stock access would couple them to infrastructure. A single generic controller would combine unrelated workflows. Separate use-case controllers keep coordination clear and entities focused on their state.
 
-**Information Expert — Reservation and ReservationPolicy (D-CA2-05).** Reservation knows its own expiry and status; ReservationPolicy knows how to calculate a new one under the agreed rules. Calendar arithmetic inside ReservationService would mix policy with orchestration, and a policy change would ripple into an otherwise stable use case. (The shared catalogue limits Clock to `now()` — the older Slice 1 GRASP write-up needs updating to match.)
+**Information Expert — Reservation and ReservationPolicy (D-CA2-05).** Reservation knows its own expiry and status; ReservationPolicy knows how to calculate a new one under the agreed rules. Calendar arithmetic inside ReservationService would mix policy with orchestration, and a policy change would ripple into an otherwise stable use case. The shared Clock supplies `now()` without performing policy calculations.
 
-**Information Expert — OrderLine and CustomerOrder (D-CA2-06).** Line independence argues for keeping each line's status and valid transitions with the line itself, while the order derives completion from its lines. A single order-level status would hide partial readiness. This evaluates the intended Slice 2 design — the branch doesn't yet have the CRC or GRASP that would confirm it at implementation level.
+**Information Expert — OrderLine and CustomerOrder (D-CA2-06).** OrderLine owns its status and transition rules, while CustomerOrder derives completion from its lines. A single order-level status would hide partial readiness. The Slice 2 CRC and GRASP records assign transition rules to OrderLine and aggregate completion to CustomerOrder, keeping these business rules separate from service orchestration.
 
 **Creator and Information Expert — OfflineReconciliationService and OfflineTransaction.** The controller holds the initial form data, so it creates the OfflineTransaction and OfflineLine objects; the entity then owns its own lifecycle through `markReconciled`, `refer` and `resolve`. A repository that also decided state would mix storage with business logic.
 
-**Pure Fabrication and High Cohesion — ConflictChecker.** Spotting a duplicate needs stored references; spotting an item conflict needs stock data — neither belongs naturally to one offline line. A dedicated checker groups the rules and keeps them independently testable.
+**Pure Fabrication and High Cohesion — ConflictChecker.** Duplicate detection needs stored references, while stock conflict detection needs availability data. Neither responsibility belongs to an individual offline line. A dedicated checker groups the rules and keeps them independently testable.
 
-**Information Expert — Sale and SaleLine.** A line calculates its own net amount from its own quantity, price and discount; Sale derives the total from its lines. Putting that arithmetic in SaleService instead would separate calculation from data and bloat the controller every time a rule changes. ProductCatalogue keeps product/maker lookup separate from the sale workflow.
+**Information Expert — Sale and SaleLine.** A line calculates its own net amount from its own quantity, price and discount; Sale derives the total from its lines. Placing these calculations in SaleService would separate behaviour from the data it uses and increase controller complexity. ProductCatalogue keeps product/maker lookup separate from the sale workflow.
 
-**Pure Fabrication — repositories.** ReservationRepository, OfflineTransactionRepository and SaleRepository concentrate persistence so domain objects don't need to understand storage. The trade-off: this doesn't by itself guarantee a transaction boundary where repositories and stock storage must change together.
+**Pure Fabrication — repositories.** ReservationRepository, CustomerOrderRepository, OfflineTransactionRepository and SaleRepository concentrate persistence so domain objects don't need to understand storage. The trade-off: this doesn't by itself guarantee a transaction boundary where repositories and stock storage must change together.
 
-**Indirection and Protected Variations — shared ports (D-CA2-03/04/08).** StockAvailabilityPort gives one shared stock vocabulary; SaleRecordingPort gives one sale-recording boundary. Letting Slice 3 create sales or touch stock directly would duplicate validation and risk inconsistent outcomes. Shared interfaces let fakes be tested against one common contract; Clock applies the same idea to time.
+**Indirection and Protected Variations — shared ports (D-CA2-03/04/08).** StockAvailabilityPort gives one shared stock vocabulary; SaleRecordingPort gives one sale-recording boundary. Letting Slice 3 create sales or touch stock directly would duplicate validation and risk inconsistent outcomes. Shared interfaces let fakes be tested against one common contract; Clock applies the same idea to time. For example, a test clock can make expiry scenarios repeatable without depending on the real date. A stock fake can supply known availability states to exercise refusal paths independently of a database.
 
 ### 5.3 Integrated collaboration
 
-Slice 1 reserves or releases stock; Slice 3 checks stock and hands off sale recording; Slice 4 creates sales and drives the Sold transition. Slice 2's branch doesn't yet define collection as a sale — its classes still need integrating once they exist.
+Slice 1 reserves or releases stock; Slice 3 checks stock and hands off sale recording; Slice 4 creates sales and drives the Sold transition. Slice 2 tracks order-line progress and does not create a sale when collection is recorded. Its service, aggregate, repository and identity collaborator are represented in the integrated model. Clock is shared by all four slices; sale recording and stock transitions remain with their designated providers.
 
-**CRC and GRASP evidence:** [Slice 1](../slices/slice-1/crc/crc.md)/[GRASP](../slices/slice-1/grasp/grasp.md); [Slice 3](../slices/slice-3/crc/crc.md)/[GRASP](../slices/slice-3/grasp/grasp.md); [Slice 4](../slices/slice-4/crc/crc.md)/[GRASP](../slices/slice-4/grasp/grasp.md).
+**CRC and GRASP evidence:** [Slice 1](../slices/slice-1/crc/crc.md)/[GRASP](../slices/slice-1/grasp/grasp.md); [Slice 2](../slices/slice-2/crc/crc.md)/[GRASP](../slices/slice-2/grasp/grasp.md); [Slice 3](../slices/slice-3/crc/crc.md)/[GRASP](../slices/slice-3/grasp/grasp.md); [Slice 4](../slices/slice-4/crc/crc.md)/[GRASP](../slices/slice-4/grasp/grasp.md).
 
 ## 6. Design Structure and Shared Interfaces
 
-The [package/layer view](../design/package-layer-view.puml) abstracts the class diagram into application services, domain concepts, shared contracts, and persistence/time-provider boundaries — a new view over the existing design, not an implemented deployment. It separates the three integrated slices from the still-unintegrated order-fulfilment package.
+The [package/layer view](../design/package-layer-view.puml) groups the design into application services, domain objects, shared contracts and infrastructure boundaries. It is a structural view rather than a deployment diagram. The integrated class model provides the more detailed reference for the four slices, including order fulfilment.
 
 Application services coordinate domain objects and repositories; shared abstractions isolate cross-slice dependencies. Concrete database, stock and time providers stay unspecified.
 
 | Shared interface | Operations / result | Responsibility |
 |---|---|---|
 | StockAvailabilityPort | `getStatus`, `reserveIfAvailable`, `releaseIfReserved`, `sellAllIfAvailable` | Consistent stock status and controlled transitions |
-| SaleRecordingPort | `recordSale(SaleRequest)` → `Recorded(saleRef)` / `Rejected(reason)` | One authoritative sale boundary; provided by SaleService |
+| SaleRecordingPort | `recordSale(SaleRequest)` and `findRecordedResult(SaleRequest)` → recorded / rejected; recovery may return null | One authoritative sale boundary; provided by SaleService |
 | Clock | `now(): DateTime` | Supply time without embedding the system clock in business rules |
+| CurrentUser (Slice 2) | `getUserId()` | Provide the signed-in volunteer identity without coupling fulfilment to authentication infrastructure |
 
-Available, Reserved, Sold and Unknown are the shared stock statuses, and Unknown isn't Available — a stock-service failure is a technical error, not an availability value. Refusals are named consistently; Slice 3's referral reasons explain why a record needs management review rather than signalling infrastructure failure.
+Available, Reserved, Sold and Unknown are the shared stock statuses. Unknown is not Available. Stock-service failures are technical errors. Slice 3 referral reasons describe business conflicts requiring management review.
 
-The error catalogue keeps refusal and technical failure apart so callers respond to each correctly — a technical failure must never be read as confirmation, and the stock port has to re-check availability on every change since an earlier read can go stale.
+The error catalogue separates business refusals from technical failures. A failure cannot be treated as confirmation. The stock port must recheck availability when changing it because earlier information may be outdated.
 
-The [shared interface catalogue](../design/shared-interface-catalogue.md) and [error catalogue](../design/operation-error-catalogue.md) hold the full definitions; the [shared contract test plan](../design/shared-contract-test-plan.md) specifies tests for status transitions, idempotency, maker attribution and cross-slice interaction — a specification, not executed results. A shared authenticated-identity abstraction is a plausible future extension, not something the current contracts establish.
+The [shared interface catalogue](../design/shared-interface-catalogue.md) and [error catalogue](../design/operation-error-catalogue.md) hold the full definitions; the [shared contract test plan](../design/shared-contract-test-plan.md) specifies tests for status transitions, idempotency, maker attribution and cross-slice interaction — a specification, not executed results. CurrentUser describes the identity boundary within Slice 2. Cross-slice identity consistency remains an open design question.
 
 ## 7. Traceability
 
-The [CA2 traceability matrix](../backlog/traceability.csv), prepared alongside this dossier, connects each use case to its backlog item, CA1 requirement, Gherkin, SSD, contract, responsibility artefacts, interactions and classes. The CA1 matrix is untouched; each CA2 row distinguishes real links from missing evidence or branch-only artefacts.
+The [CA2 traceability matrix](../backlog/traceability.csv) connects the selected use cases to backlog items, CA1 requirements, Gherkin, SSDs, operation contracts, CRC/GRASP, interactions and design classes. The CA1 matrix remains the requirements reference. The following table summarises the actual artefact coverage of the current design; the separate CSV retains some earlier coverage labels, so the linked artefacts and the table below provide the current reference for design coverage.
 
-| Use case | CA2 work | CA1 evidence | Design coverage in supplied material |
+| Use case | CA2 work | CA1 evidence | Current design coverage |
 |---|---|---|---|
-| UC-02 | PB-04 / AD-01 / US-01 | TR-02; SC-01–03 | Behaviour, contracts, CRC/GRASP, interactions present; standalone SSD missing |
-| UC-04 | PB-05 / AD-02 / US-02 | TR-04; SC-04 | Branch use case, Gherkin and SSD only; object design still missing |
-| UC-10 | PB-06 / AD-03 / US-CA2-01 | TR-10; US-09; SC-11–15 | Principal artefacts present; identity and retry alignment needed |
-| UC-01 | PB-03 / AD-04 / US-05 | TR-07; SC-07 | Principal artefacts present; atomicity and idempotency details outstanding |
+| UC-02 | PB-04 / AD-01 / US-01 | TR-02; SC-01–03 | Use case, Gherkin, SSD, contracts, CRC/GRASP, two interactions and integrated classes |
+| UC-04 | PB-05 / AD-02 / US-02 | TR-04; SC-04 | Use case, Gherkin, SSD, four contracts, CRC/GRASP, interactions, state diagram and integrated classes |
+| UC-10 | PB-06 / AD-03 / US-CA2-01 | TR-10; US-09; SC-11–15 | Principal artefacts, entry-based operations and recovery design |
+| UC-01 | PB-03 / AD-04 / US-05 | TR-07; SC-07 | Principal artefacts, recording and recovery contracts, integrated classes |
 
-This establishes why an operation exists and how its effects get checked — not that it's implemented or running correctly. FR-06 is context for Slice 2, not a claim order creation is designed; US-CA2-01 links back to its CA1 predecessor US-09 rather than treating offline reconciliation as unrelated new work. Gaps are named explicitly so finishing PB-09 stays a concrete task, not something quietly assumed done.
+Traceability establishes why an operation exists and which design evidence describes its effects. It is not proof of implementation or successful execution. FR-06 remains context for Slice 2, not a claim that order creation is designed. US-CA2-01 links offline reconciliation to its CA1 predecessor US-09. Maintaining the CSV alongside the design artefacts and recording review outcomes supports traceability and quality control. For example, a change to an operation signature should be reflected in the SSD, its contract, the internal sequence and the integrated class model. A linked Gherkin scenario then provides a reference for checking the intended outcome.
 
 ## 8. Design Evaluation
 
-The design's biggest strength is keeping coordination separate from domain state: controllers make each use case's sequencing readable, while Reservation, OfflineTransaction, Sale and SaleLine still carry real business responsibility instead of becoming data holders. A line-level order model similarly captures independent progress better than one order-wide status would — high cohesion without a separate service for every small calculation.
+The main strength is the separation of coordination from domain state. Controllers manage each workflow, while entities retain business responsibilities rather than acting only as data holders. The order model also represents independent line progress without requiring a separate service for every calculation. These choices support high cohesion.
 
-Shared stock and sale contracts cut coupling: Slice 3 leans on the same sale-recording capability as the ordinary sale flow, avoiding duplicated maker-attribution and stock-update logic. The cost is that those interfaces now have to stay semantically stable — a renamed method, or a different read of "Unknown" stock, can break integration even when each slice looks fine alone. That's why shared contract tests matter, including against any fake provider a member is using.
+Shared stock and sale contracts reduce coupling. Slice 3 reuses the ordinary sale capability rather than duplicating maker attribution and stock updates. The trade-off is that all consumers must interpret the interfaces consistently. A renamed method or different interpretation of Unknown stock could break integration. Shared contract tests can help detect these problems, including when a fake provider is used.
 
-Object validity depends on state transitions holding together and persistence backing them up. A reservation has to agree with the stock status it produces; a valid Sale needs lines with maker attribution, and one failed line can't leave the rest sold. The class diagram describes these responsibilities, but independent calls to stock and sale storage aren't enough on their own to guarantee atomicity — that needs a shared transaction or recovery protocol at implementation time. This is probably the design's most significant consistency limitation right now.
+Object validity depends on consistent state changes and persistence. A reservation must agree with stock status. A valid Sale needs maker-attributed lines, and failure of one line must not leave the others sold. The class diagram describes these responsibilities, but independent calls to stock and sale storage aren't enough on their own to guarantee atomicity — that needs a shared transaction or recovery protocol at implementation time. This is a significant implementation risk that the design explicitly acknowledges.
 
-Idempotency needs more than a unique key: the provider needs enough stored context to tell an identical retry apart from a changed request, and reconciliation needs to recover a prior result rather than treating an already-Sold item as a fresh conflict. The current artefacts don't fully spell that out. Similarly, `recordedBy`, `resolvedBy` and `processedBy` express accountability without a common trusted identity source — a shared user-context abstraction could close that gap but would need its own authorisation rules.
+Idempotency requires enough stored information to distinguish an identical retry from a changed request. Reconciliation must recover an earlier sale rather than mistake Sold stock for a new conflict. The updated SaleRequest, IdempotencyRecord and recovery operation address these concerns at design level, but their guarantees still depend on correct implementation. Similarly, the recorded user identifiers support accountability but lack a common trusted identity source. A shared user context could reduce this variation by separating authentication infrastructure from the business operations.
 
-Some trade-offs are deliberate rather than oversights. The reservation policy is configurable instead of a hard-coded three-day window. Reserved stock is conservatively excluded from ordinary sales until the reservation-holder question is settled. What one unit of stock actually is, and what "quantity" means, stays important because a single Sold flag is awkward against a partially sold batch. The order-fulfilment branch keeps only the last change rather than full history, and offstage approval can't be verified by the system itself — manageable trade-offs, but real operational risk.
+Several trade-offs are deliberate. Reservation duration is configurable, and Reserved stock is excluded from ordinary sales under the current design. Stock quantity also needs clarification because a single Sold status may not represent a partially sold batch. Order fulfilment retains the last change rather than a full audit history. Customer approval cannot be independently verified by the system. These choices reduce design complexity but leave operational risks.
 
-The evidence supports a coherent direction, not a claim that every rule is confirmed or every sequence lines up. Fixing the mismatched signatures, walking through exceptional scenarios, and getting actual reviews done matter more right now than adding classes. The [open questions](../decisions/open-questions.md) remain the right place to track unresolved policy and integration risk.
+The design provides a coherent basis for implementation. The main risks concern consistency between operation signatures, the treatment of exceptional scenarios and the interpretation of shared business rules. Addressing these through existing contracts and review records is preferable to adding more classes. The [open questions](../decisions/open-questions.md) document policy details and integration risks.
 
 ## 9. Process, Review and Individual Evidence
 
-The [Product Backlog](../backlog/product-backlog.md) gives work identifiers and a proposed split into four slice owners plus shared integration tasks. The [iteration plan](../project-management/iteration-plan.md) sequences work from baseline agreement through contracts, slice design, integration and final evidence. The [Definition of Done](../project-management/definition-of-done.md) asks for editable sources, aligned terminology, traceability, actual peer review, updated evidence links, and AI disclosure before anything counts as complete.
+The [Product Backlog](../backlog/product-backlog.md) defines individual slice work and shared integration tasks. The [iteration plan](../project-management/iteration-plan.md) sequences baseline agreement, shared contracts, individual design, integration and final evidence. The [Definition of Done](../project-management/definition-of-done.md) requires editable sources, terminology alignment, traceability, peer review and AI disclosure. Backlog entries identify the planned work, while the linked design artefacts and review records provide evidence of its current state.
 
-The [decision log](../decisions/decision-log.md) records alternatives and rationale. In its current snapshot, PB-01 and PB-02 are Ready, the four slice tasks are In Progress, and integration/review/submission work is still Backlog — recorded statuses, not a live verified board. The [peer review template](../reviews/peer-review-template.md) and [integration checklist](../reviews/integration-review.md) set out how review should be recorded, but neither holds a completed outcome yet.
+The [decision log](../decisions/decision-log.md) retains alternatives and their rationale. The [integration review](../reviews/integration-review.md) records specific findings and follow-up for Slices 1, 3 and 4, including responsibility allocation, shared operation signatures and recovery behaviour. The review records document-level findings, corrections and open items rather than executed test results. Its recorded coverage is Slices 1, 3 and 4, including technical self-review for Slice 4. The record does not cover Slice 2. This distinction keeps the design artefacts and the evidence of review separate.
 
-GitHub history, board activity, finished reviews. 
-Each member needs to record their actual contributions and reviews, referencing real commits or pull requests. 
-The group AI declaration and individual logs need to describe the tools used, their purpose, what they touched, and how a human checked the result
-— honestly, not as a formality.
-The final submission tag needs to point at the reviewed state, not just be mentioned here.
-## Repository references and evidence notes
+The [retrospective](../docs/reflection/retrospective.md) identifies the value of dividing the work into slices and the difficulty of integrating work delivered at different stages. Earlier agreement on shared interfaces, intermediate deadlines and assigned reviewers are the proposed improvements.
 
-- [CA1 analysis dossier](../../ca1-analysis/report/analysis_dossier.md), [CA1 user stories](../../ca1-analysis/requirements/backlog.md), [domain model](../../ca1-analysis/diagrams/domain-model.puml), [CA1 traceability](../../ca1-analysis/requirements/traceability.csv).
-- [CA2 README](../README.md), [scenario selection](scenario-selection.md), [baseline change log](baseline-change-log.md), [baseline restatement](agreed-baseline.md).
-- [Integrated class diagram](../design/integrated-design-class-diagram.puml), [package/layer view](../design/package-layer-view.puml), [traceability matrix](../backlog/traceability.csv), [shared test plan](../design/shared-contract-test-plan.md).
+## 10. Conclusion and Limitations
+
+The CA2 design translates the marketplace requirements into four behavioural slices connected by shared interfaces. Reservation and sale coordinate stock availability, offline reconciliation uses the same sale-recording capability, and order fulfilment tracks independent line progress. The integrated class diagram represents all four areas, supported by contracts and responsibility-based object design.
+
+The main limitations concern cross-slice identity consistency, reservation and stock policy details, implementation-level transaction guarantees and documentation alignment. These are recorded as open questions, design constraints and review findings. The work establishes design intent rather than a functioning application. A subsequent implementation could use the operation contracts and scenario specifications to validate the expected behaviours, particularly stock consistency, line transitions and safe transaction retries. Concrete infrastructure and deployment decisions are outside the CA2 scope.
