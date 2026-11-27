@@ -7,7 +7,7 @@ participant "LocalCraft Marketplace System" as System
 
 == Record a reservation ==
 
-Volunteer -> System: recordReservation(itemCode, customerRef, conditions)
+Volunteer -> System: recordReservation(userId, itemCode, customerRef, conditions)
 
 alt reservation successful
     System --> Volunteer: ReservationConfirmed(reservationId, agreedExpiry)

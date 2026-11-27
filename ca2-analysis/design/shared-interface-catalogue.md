@@ -49,9 +49,11 @@ The sale requires all-or-nothing behaviour across sale persistence and stock cha
 
 **Purpose:** Provide one entry point for recording a sale. Consumers must not create `Sale` / `SaleLine` records or update stock directly.
 
-### Operation
+### Operations
 
 `recordSale(request: SaleRequest): SaleRecordingResult`
+
+`findRecordedResult(request: SaleRequest): SaleRecordingResult?` — read-only recovery of a previously committed sale. Authorise the caller first. An identical key and payload returns the original `Recorded(saleRef)`; a different payload with an existing key returns `Rejected(IdempotencyKeyConflict)`; no committed result returns `null`. A technical lookup failure is reported separately, never as `null`.
 
 ### SaleRequest
 
@@ -98,7 +100,7 @@ Slice 4 is responsible for validation, maker attribution, availability checking,
 
 Slice 3 must:
 
-- Complete its own duplicate-reference and stock-conflict checks first.
+- Persist the original SaleRequest before the first attempt and reuse it unchanged on retries. Call `findRecordedResult(request)` before duplicate-reference or stock-conflict checks; proceed with those checks only when no previous result exists. Recover the original saleRef if found.
 - Send one complete `SaleRequest` for the whole offline transaction.
 - Use `entryId` as `idempotencyKey`.
 - Use `channel = OfflineMarket`, the form date as `saleDate`, the coordinator as `processedBy`, and `offlineRef` as `sourceRef`.
@@ -117,12 +119,16 @@ Slice 3 must:
 
 Clock supplies the current date and time only. Reservation working-day calculations belong to `ReservationPolicy`, using an agreed working-day calendar. The calendar and expiry policy remain open under Q-01 and Q-SH-03.
 
-- Slice 1 uses `now()` to evaluate reservation expiry.
+- Slice 1 uses `now()` to obtain the time for reservation policy calculations; expiry evaluation uses its supplied `asOf`.
 - Slice 2 uses `now()` for an order line's `lastChangedAt`.
 - Slice 3 uses `now()` for `recordedAt` and manager-resolution timestamps.
 - Slice 4 uses `now()` for `recordedAt` and as the default in-store `saleDate`.
 
-## 4. Integration rules
+## 4. CurrentUser (proposed for Slice 2 only)
+
+`getUserId(): String` provides the signed-in volunteer identity for line changes. Access is checked before UC-04 starts. This reflects D-CA2-18, which remains a draft group decision; it does not establish a common identity policy for other slices.
+
+## 5. Integration rules
 
 1. Shared operation names, request fields, status values and result names must be copied exactly into each slice's contracts and diagrams.
 2. A fake implementation must follow the same behaviour as the shared contract.

@@ -1,385 +1,343 @@
 @startuml
- title Integrated Design Class Diagram — Local Craft Marketplace (Slices 1, 3 and 4)
- left to right direction
- skinparam packageStyle rectangle
- skinparam classAttributeIconSize 0
- skinparam shadowing false
- skinparam linetype ortho
- skinparam nodesep 35
- skinparam ranksep 45
- hide empty members
+title Integrated Design Class Diagram — Local Craft Marketplace (Slices 1–4)
+left to right direction
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam nodesep 25
+skinparam ranksep 35
+hide empty members
 
-' ============================================================
-' SHARED CONTRACTS — the only cross-slice integration points
-' ============================================================
- package "Shared Contracts" as Shared {
-   interface StockAvailabilityPort <<shared port>> {
-     +getStatus(itemCode: String): StockStatus
-     +reserveIfAvailable(itemCode: String): StockOperationResult
-     +sellAllIfAvailable(stockLines: List<StockLine>, idempotencyKey: String): StockOperationResult
-     +releaseIfReserved(itemCode: String): StockOperationResult
-   }
+' Overview: detailed result variants are not drawn here; see the full design and contracts.
+' Basic entity getters are omitted from this view; operation signatures are otherwise unchanged.
 
-   interface SaleRecordingPort <<provided by Slice 4>> {
-     +recordSale(request: SaleRequest): SaleRecordingResult
-     +findRecordedResult(request: SaleRequest): SaleRecordingResult?
-   }
+package "Shared Contracts" as Shared {
+  interface StockAvailabilityPort <<shared port>> {
+    +getStatus(itemCode: String): StockStatus
+    +reserveIfAvailable(itemCode: String): StockOperationResult
+    +sellAllIfAvailable(stockLines: List<StockLine>, idempotencyKey: String): StockOperationResult
+    +releaseIfReserved(itemCode: String): StockOperationResult
+  }
+  interface SaleRecordingPort <<provided by Slice 4>> {
+    +recordSale(request: SaleRequest): SaleRecordingResult
+    +findRecordedResult(request: SaleRequest): SaleRecordingResult?
+  }
+  interface Clock <<shared port>> {
+    +now(): DateTime
+  }
+  enum StockStatus {
+    Available
+    Reserved
+    Sold
+    Unknown
+  }
+  class StockLine <<value object>> {
+    +itemCode: String
+    +quantity: Integer
+  }
+  class SaleRequest <<request DTO>> {
+    +idempotencyKey: String
+    +processedBy: String
+    +channel: SaleChannel
+    +customerRef: String?
+    +saleDate: Date?
+    +sourceRef: String?
+  }
+  class SaleRequestLine <<request DTO>> {
+    +itemCode: String
+    +quantity: Integer
+    +soldPrice: Money
+    +discountAmount: Money?
+  }
+  enum SaleChannel {
+    InStore
+    OfflineMarket
+  }
+}
 
-   interface Clock <<shared port>> {
-     +now(): DateTime
-   }
+package "Slice 1 — Manage Reservation (UC-02)" as S1 {
+  class ReservationService <<controller>> {
+    +recordReservation(itemCode: String, customerRef: String, conditions: ReservationConditions, userId: String): ReservationResult
+    +evaluateExpiry(asOf: DateTime): List<Reservation>
+    -validateRequest(itemCode: String, customerRef: String, conditions: ReservationConditions): ValidationResult
+  }
+  class Reservation <<entity>> {
+    +reservationId: String
+    +createdByUserId: String
+    +itemCode: String
+    +customerRef: String
+    +conditions: ReservationConditions
+    +status: ReservationStatus
+    +agreedExpiry: DateTime
+    +create(itemCode: String, customerRef: String, conditions: ReservationConditions, agreedExpiry: DateTime, createdByUserId: String): Reservation
+    +expire(): void
+  }
+  class ReservationRepository <<repository>> {
+    +findActiveByItemCode(itemCode: String): Reservation?
+    +findAllActive(): List<Reservation>
+    +save(reservation: Reservation): String
+    +update(reservation: Reservation): void
+  }
+  class ReservationPolicy <<domain policy>> {
+    +calculateExpiry(currentDateTime: DateTime): DateTime
+  }
+  class ReservationConditions <<value object>>
+  enum ReservationStatus {
+    Active
+    Expired
+  }
+}
 
-   enum StockStatus {
-     Available
-     Reserved
-     Sold
-     Unknown
-   }
+package "Slice 2 — Manage Customer Order (UC-04)" as S2 {
+  interface CurrentUser <<proposed for Slice 2>> {
+    +getUserId(): String
+  }
+  class OrderFulfilmentService <<controller>> {
+    +viewOrder(orderId: String): OrderDetailsResult
+    +markReady(orderId: String, lineId: String): LineChangeResult
+    +recordCollection(orderId: String, lineId: String): LineChangeResult
+    +recordCustomerDecision(orderId: String, lineId: String, decision: LineDecision, decisionReason: String?): LineChangeResult
+  }
+  class CustomerOrderRepository <<repository>> {
+    +findById(orderId: String): CustomerOrder?
+    +save(order: CustomerOrder): void
+  }
+  class CustomerOrder <<aggregate root>> {
+    +orderId: String
+    +orderStatus: OrderStatus
+    +getLineDetails(): List<OrderLineDetails>
+    -findLine(lineId: String): OrderLine
+    +markLineReady(lineId: String, changedBy: String, changedAt: DateTime): LineChangeResult
+    +markLineCollected(lineId: String, changedBy: String, changedAt: DateTime): LineChangeResult
+    +recordLineDecision(lineId: String, decision: LineDecision, decisionReason: String?, changedBy: String, changedAt: DateTime): LineChangeResult
+    -recalculateStatus(): void
+  }
+  class OrderLine <<entity>> {
+    +lineId: String
+    +fulfilmentStatus: LineStatus
+    +lastChangedBy: String?
+    +lastChangedAt: DateTime?
+    +decisionReason: String?
+    +markReady(changedBy: String, changedAt: DateTime): LineTransitionResult
+    +markCollected(changedBy: String, changedAt: DateTime): LineTransitionResult
+    +applyDecision(decision: LineDecision, decisionReason: String?, changedBy: String, changedAt: DateTime): LineTransitionResult
+    +isClosed(): Boolean
+  }
+  enum OrderStatus {
+    Open
+    Completed
+  }
+  enum LineStatus {
+    BeingMade
+    Ready
+    Collected
+    Cancelled
+    Substituted
+  }
+  enum LineDecision {
+    Cancelled
+    Substituted
+  }
+  class OrderLineDetails <<value object>> {
+    +lineId: String
+    +lineStatus: LineStatus
+  }
+}
 
-   class StockLine <<value object>> {
-     +itemCode: String
-     +quantity: Integer
-   }
+package "Slice 3 — Reconcile Offline Transactions (UC-10)" as S3 {
+  class OfflineReconciliationService <<controller>> {
+    +enterOfflineTransaction(submissionId: String, offlineRef: String, saleDate: Date, recordedBy: String, lines: List<OfflineLine>): OfflineOperationResult
+    +reconcile(entryId: String): OfflineOperationResult
+    +resolve(entryId: String, decision: ResolutionDecision, note: String): OfflineOperationResult
+    -requireCoordinatorRole(): void
+    -requireManagerRole(): void
+  }
+  class OfflineTransaction <<entity>> {
+    +entryId: String
+    +submissionId: String
+    +offlineRef: String
+    +saleDate: Date
+    +recordedBy: String
+    +recordedAt: DateTime
+    +status: OfflineTransactionStatus
+    +referralReason: ReferralReason?
+    +referralDetail: String?
+    +saleRef: String?
+    +saleRequest: SaleRequest?
+    +decision: ResolutionDecision?
+    +resolutionNote: String?
+    +resolvedBy: String?
+    +resolvedAt: DateTime?
+    +create(submissionId: String, offlineRef: String, saleDate: Date, recordedBy: String, recordedAt: DateTime, lines: List<OfflineLine>): OfflineTransaction
+    +markReconciled(saleRef: String): void
+    +refer(reason: ReferralReason, detail: String?): void
+    +resolve(decision: ResolutionDecision, note: String, resolvedBy: String, resolvedAt: DateTime): void
+  }
+  class OfflineLine <<entity>> {
+    +itemCode: String
+    +quantity: Integer
+    +soldPrice: Money
+  }
+  class ConflictChecker <<domain service>> {
+    +check(transaction: OfflineTransaction): ReferralReason?
+  }
+  class OfflineTransactionRepository <<repository>> {
+    +findByEntryId(entryId: String): OfflineTransaction?
+    +findBySubmissionId(submissionId: String): OfflineTransaction?
+    +existsOtherWithRef(offlineRef: String, entryId: String): Boolean
+    +save(transaction: OfflineTransaction): void
+    +countByStatus(status: OfflineTransactionStatus): Integer
+  }
+  enum OfflineTransactionStatus {
+    AwaitingReconciliation
+    Reconciled
+    ReferredToManager
+    Resolved
+  }
+  enum ResolutionDecision {
+    Accepted
+    Adjusted
+    Rejected
+    FollowUpOutsideSystem
+  }
+  enum ReferralReason {
+    DuplicateReference
+    ItemAlreadySold
+    ItemReserved
+    ItemUnknown
+    SaleRejected
+  }
+}
 
-   abstract class StockOperationResult <<result shape>>
-   class StockUpdated {
-     +status: StockStatus
-   }
-   class StockRejected {
-     +reason: String
-     +itemCode: String?
-   }
+package "Slice 4 — Process Customer Sale (UC-01)" as S4 {
+  class SaleService <<controller / port provider>> {
+    +recordSale(request: SaleRequest): SaleRecordingResult
+    +findRecordedResult(request: SaleRequest): SaleRecordingResult?
+    -validateRequestAndIdempotency(request: SaleRequest): ValidationResult
+  }
+  interface ProcessorAuthorisationPort <<proposed>> {
+    +isAuthorised(userId: String): Boolean
+  }
+  class ProductCatalogue <<catalogue>> {
+    +findItem(itemCode: String): CatalogueItemDetails?
+  }
+  class CatalogueItemDetails <<lookup result>> {
+    +itemCode: String
+  }
+  class Product <<entity>> {
+    +productId: String
+    +description: String
+    +basePrice: Money
+  }
+  class Maker <<entity>> {
+    +makerId: String
+    +name: String
+  }
+  class SaleRepository <<repository>> {
+    +findByIdempotencyKey(key: String): IdempotencyRecord?
+    +persist(sale: Sale, record: IdempotencyRecord): PersistenceResult
+  }
+  class IdempotencyRecord <<value object>> {
+    +idempotencyKey: String
+    +requestFingerprint: String
+    +saleRef: String
+  }
+  class Sale <<entity / aggregate root>> {
+    +saleRef: String
+    +processedBy: String
+    +customerRef: String?
+    +sourceRef: String?
+    +channel: SaleChannel
+    +saleDate: Date
+    +recordedAt: DateTime
+    +status: SaleStatus
+    +create(request: SaleRequest, recordedAt: DateTime): Sale
+    +addLine(line: SaleLine): void
+    +calculateTotal(): Money
+  }
+  class SaleLine <<entity>> {
+    +itemCode: String
+    +soldPrice: Money
+    +quantity: Integer
+    +discountAmount: Money?
+    +create(item: CatalogueItemDetails, maker: Maker, soldPrice: Money, quantity: Integer, discountAmount: Money?): SaleLine
+    +calculateNetAmount(): Money
+  }
+  enum SaleStatus {
+    Completed
+  }
+}
 
-   class SaleRequest <<request DTO>> {
-     +idempotencyKey: String
-     +processedBy: String
-     +channel: SaleChannel
-     +customerRef: String?
-     +saleDate: Date?
-     +sourceRef: String?
-   }
+' Reservation
+ReservationService ..> StockAvailabilityPort
+ReservationService ..> Clock
+ReservationService --> ReservationRepository
+ReservationService --> ReservationPolicy
+ReservationService --> Reservation
 
-   class SaleRequestLine <<request DTO>> {
-     +itemCode: String
-     +quantity: Integer
-     +soldPrice: Money
-     +discountAmount: Money?
-   }
+' Order fulfilment
+OrderFulfilmentService ..> Clock
+OrderFulfilmentService ..> CurrentUser
+OrderFulfilmentService --> CustomerOrderRepository
+OrderFulfilmentService --> CustomerOrder
+CustomerOrder "1" *-- "1..*" OrderLine
 
-   enum SaleChannel {
-     InStore
-     OfflineMarket
-   }
+' Offline reconciliation
+OfflineReconciliationService ..> SaleRecordingPort : records / recovers
+OfflineReconciliationService ..> Clock
+OfflineReconciliationService --> OfflineTransactionRepository
+OfflineReconciliationService --> ConflictChecker
+OfflineReconciliationService --> OfflineTransaction
+ConflictChecker ..> StockAvailabilityPort : getStatus
+ConflictChecker --> OfflineTransactionRepository
+OfflineTransaction "1" *-- "1..*" OfflineLine
 
-   class ValidationResult <<validation result>> {
-     +valid: Boolean
-     +reason: String?
-   }
+' Customer sale
+SaleService ..|> SaleRecordingPort
+SaleService ..> StockAvailabilityPort
+SaleService ..> Clock
+SaleService ..> ProcessorAuthorisationPort : proposed
+SaleService --> ProductCatalogue
+SaleService --> SaleRepository
+SaleService --> Sale
+SaleRepository ..> IdempotencyRecord
+Sale "1" *-- "1..*" SaleLine
+ProductCatalogue ..> CatalogueItemDetails
+CatalogueItemDetails --> "1" Product
+CatalogueItemDetails --> "0..1" Maker
+SaleLine "0..*" --> "1" Product
+SaleLine "0..*" --> "1" Maker : attribution
+SaleRequest "1" *-- "0..*" SaleRequestLine
 
-   abstract class SaleRecordingResult <<business result>>
-   class Recorded {
-     +saleRef: String
-   }
-   class Rejected {
-     +reason: String
-   }
- }
-
-' ============================================================
-' SLICE 1 — RESERVATION
-' ============================================================
- package "Slice 1 — Manage Reservation (UC-02)" as S1 {
-   class ReservationService <<controller>> {
-     +recordReservation(itemCode: String, customerRef: String, conditions: ReservationConditions): ReservationResult
-     +evaluateExpiry(asOf: DateTime): List<Reservation>
-     -validateRequest(itemCode: String, customerRef: String, conditions: ReservationConditions): ValidationResult
-     -keepActive(): void
-   }
-
-   class Reservation <<entity>> {
-     +reservationId: String
-     +itemCode: String
-     +customerRef: String
-     +conditions: ReservationConditions
-     +status: ReservationStatus
-     +agreedExpiry: DateTime
-     +create(itemCode: String, customerRef: String, conditions: ReservationConditions, agreedExpiry: DateTime): Reservation
-     +getAgreedExpiry(): DateTime
-     +expire(): void
-   }
-
-   class ReservationRepository <<repository>> {
-     +findActiveByItemCode(itemCode: String): Reservation?
-     +findAllActive(): List<Reservation>
-     +save(reservation: Reservation): String
-     +update(reservation: Reservation): void
-   }
-
-   class ReservationPolicy <<domain policy>> {
-     +calculateExpiry(currentDateTime: DateTime): DateTime
-   }
-
-   class ReservationConditions <<value object>>
-
-   enum ReservationStatus {
-     Active
-     Expired
-   }
-
-   abstract class ReservationResult <<result abstraction>>
-   class ReservationConfirmed {
-     +reservationId: String
-     +agreedExpiry: DateTime
-   }
-   class ReservationRejected {
-     +reason: String
-   }
-   class ReservationTechnicalFailure {
-     +reason: String
-   }
- }
-
-' ============================================================
-' SLICE 3 — OFFLINE RECONCILIATION
-' ============================================================
- package "Slice 3 — Reconcile Offline Transactions (UC-10)" as S3 {
-   class OfflineReconciliationService <<controller>> {
-     +enterOfflineTransaction(submissionId: String, offlineRef: String, saleDate: Date, recordedBy: String, lines: List<OfflineLine>): OfflineOperationResult
-     +reconcile(entryId: String): OfflineOperationResult
-     +resolve(entryId: String, decision: ResolutionDecision, note: String): OfflineOperationResult
-     -requireCoordinatorRole(): void
-     -requireManagerRole(): void
-   }
-
-   class OfflineTransaction <<entity>> {
-     +entryId: String
-     +submissionId: String
-     +offlineRef: String
-     +saleDate: Date
-     +recordedBy: String
-     +recordedAt: DateTime
-     +status: OfflineTransactionStatus
-     +referralReason: ReferralReason?
-     +referralDetail: String?
-     +saleRef: String?
-     +saleRequest: SaleRequest?
-     +decision: ResolutionDecision?
-     +resolutionNote: String?
-     +resolvedBy: String?
-     +resolvedAt: DateTime?
-     +create(submissionId: String, offlineRef: String, saleDate: Date, recordedBy: String, recordedAt: DateTime, lines: List<OfflineLine>): OfflineTransaction
-     +markReconciled(saleRef: String): void
-     +refer(reason: ReferralReason, detail: String?): void
-     +resolve(decision: ResolutionDecision, note: String, resolvedBy: String, resolvedAt: DateTime): void
-   }
-
-   class OfflineLine <<entity>> {
-     +itemCode: String
-     +quantity: Integer
-     +soldPrice: Money
-   }
-
-   class ConflictChecker <<domain service>> {
-     +check(transaction: OfflineTransaction): ReferralReason?
-   }
-
-   class OfflineTransactionRepository <<repository>> {
-     +findByEntryId(entryId: String): OfflineTransaction?
-     +findBySubmissionId(submissionId: String): OfflineTransaction?
-     +existsOtherWithRef(offlineRef: String, entryId: String): Boolean
-     +save(transaction: OfflineTransaction): void
-     +countByStatus(status: OfflineTransactionStatus): Integer
-   }
-
-   enum OfflineTransactionStatus {
-     AwaitingReconciliation
-     Reconciled
-     ReferredToManager
-     Resolved
-   }
-
-   enum ResolutionDecision {
-     Accepted
-     Adjusted
-     Rejected
-     FollowUpOutsideSystem
-   }
-
-   abstract class OfflineOperationResult <<business result>>
-   class OfflineOperationSuccess
-   class OfflineOperationRejected {
-     +reason: String
-     +invalidFields: List<String>
-   }
-
-   enum ReferralReason {
-     DuplicateReference
-     ItemAlreadySold
-     ItemReserved
-     ItemUnknown
-     SaleRejected
-   }
-
- }
-
-' ============================================================
-' SLICE 4 — CUSTOMER SALE
-' ============================================================
- package "Slice 4 — Process Customer Sale (UC-01)" as S4 {
-   class SaleService <<controller / port provider>> {
-     +recordSale(request: SaleRequest): SaleRecordingResult
-     +findRecordedResult(request: SaleRequest): SaleRecordingResult?
-     -validateRequestAndIdempotency(request: SaleRequest): ValidationResult
-   }
-
-   class ProductCatalogue <<catalogue>> {
-     +findItem(itemCode: String): CatalogueItemDetails?
-   }
-
-   class CatalogueItemDetails <<lookup result>> {
-     +itemCode: String
-   }
-
-   class Product <<entity>> {
-     +productId: String
-     +description: String
-     +basePrice: Money
-   }
-
-   class Maker <<entity>> {
-     +makerId: String
-     +name: String
-   }
-
-   class SaleRepository <<repository>> {
-     +findByIdempotencyKey(key: String): IdempotencyRecord?
-     +persist(sale: Sale, record: IdempotencyRecord): PersistenceResult
-   }
-
-   class IdempotencyRecord <<value object>> {
-     +idempotencyKey: String
-     +requestFingerprint: String
-     +saleRef: String
-   }
-
-   class Sale <<entity / aggregate root>> {
-     +saleRef: String
-     +processedBy: String
-     +customerRef: String?
-     +sourceRef: String?
-     +channel: SaleChannel
-     +saleDate: Date
-     +recordedAt: DateTime
-     +status: SaleStatus
-     +create(request: SaleRequest, recordedAt: DateTime): Sale
-     +addLine(line: SaleLine): void
-     +calculateTotal(): Money
-   }
-
-   class SaleLine <<entity>> {
-     +itemCode: String
-     +soldPrice: Money
-     +quantity: Integer
-     +discountAmount: Money?
-     +create(item: CatalogueItemDetails, maker: Maker, soldPrice: Money, quantity: Integer, discountAmount: Money?): SaleLine
-     +calculateNetAmount(): Money
-   }
-
-   enum SaleStatus {
-     Completed
-   }
-
-   class PersistenceResult <<technical result>> {
-     +successful: Boolean
-     +reason: String?
-   }
- }
-
-
- SaleService ..|> SaleRecordingPort : implements
-
- ReservationService ..> StockAvailabilityPort : uses
- ReservationService ..> Clock : uses
- ReservationService --> ReservationRepository : coordinates
- ReservationService --> ReservationPolicy : asks expiry
- ReservationService --> Reservation : creates / updates
- ReservationRepository --> Reservation : stores
-
- OfflineReconciliationService ..> SaleRecordingPort : records / recovers sale
- OfflineReconciliationService ..> Clock : timestamps records
- OfflineReconciliationService --> OfflineTransactionRepository : stores / retrieves
- OfflineReconciliationService --> ConflictChecker : asks for conflict check
- OfflineReconciliationService --> OfflineTransaction : creates / changes state
- ConflictChecker ..> StockAvailabilityPort : getStatus only
- ConflictChecker --> OfflineTransactionRepository : checks duplicate offlineRef
- OfflineTransaction "1" *-- "1..*" OfflineLine : contains
-
- SaleService ..> StockAvailabilityPort : validates and sells stock
- SaleService ..> StockLine : maps stock batch request
- SaleService ..> Clock : recordedAt / default saleDate
- SaleService --> ProductCatalogue : resolves item and maker
- SaleService --> SaleRepository : reads idempotency / persists
- SaleService --> Sale : creates
- SaleService ..> SaleLine : creates
- SaleService ..> IdempotencyRecord : compares request
- SaleRepository ..> IdempotencyRecord : stores / retrieves
- Sale "1" *-- "1..*" SaleLine : contains
- ProductCatalogue ..> CatalogueItemDetails : returns
- CatalogueItemDetails --> "1" Product : identifies
- CatalogueItemDetails --> "0..1" Maker : identifies
- SaleLine "0..*" --> "1" Product : product details
- SaleLine "0..*" --> "1" Maker : maker attribution
-
- SaleRequest "1" *-- "0..*" SaleRequestLine : lines
- ReservationResult <|-- ReservationConfirmed
- ReservationResult <|-- ReservationRejected
- ReservationResult <|-- ReservationTechnicalFailure
- SaleRecordingResult <|-- Recorded
- SaleRecordingResult <|-- Rejected
- StockOperationResult <|-- StockUpdated
- StockOperationResult <|-- StockRejected
- OfflineOperationResult <|-- OfflineOperationSuccess
- OfflineOperationResult <|-- OfflineOperationRejected
- OfflineOperationSuccess --> "1" OfflineTransaction : returns
-
-
-' Contract constraints (not extra implementation classes).
-note right of SaleRecordingPort
-  Technical failures are reported separately
-  from business result variants.
-  findRecordedResult is read-only:
-  same key/payload -> Recorded(saleRef);
-  same key/different payload -> Rejected(IdempotencyKeyConflict);
-  no committed result -> null.
-  Lookup failure is a technical error, not null.
-  Authorise the caller before returning a stored result.
+' Key business constraints (details in operation contracts)
+note bottom of ReservationService
+  Verify userId; reservation and stock updates are atomic.
+  Expiry returns a list or signals a technical failure.
+  Release expired stock only when no other commitment applies.
 end note
-
-note right of OfflineReconciliationService
-  Persist the stable SaleRequest before the first sale
-  attempt and reuse it on retries. Authorise each caller.
-  Recover any committed sale before stock/duplicate checks.
-  Serialize processing for the same entryId.
-  Technical failures leave the entry retryable;
-  only Recorded permits Reconciled.
+note bottom of CustomerOrder
+  Completed when all lines are closed; save changes together.
+  BeingMade -> Ready -> Collected; open lines can be cancelled
+  or substituted with a reason. Closed lines reject changes first.
+  Check access before the use case; no sale is created.
 end note
-
+note bottom of OfflineReconciliationService
+  Authorise callers; persist and reuse the original SaleRequest.
+  Recover before checking conflicts; failures remain retryable.
+  Process each entryId serially; only Recorded permits Reconciled.
+end note
+note bottom of SaleRecordingPort
+  Read-only recovery: same key/payload returns Recorded(saleRef);
+  same key/different payload returns Rejected(IdempotencyKeyConflict);
+  no committed result returns null, not a lookup failure.
+  Authorise callers; technical failures are separate.
+end note
 note bottom of StockAvailabilityPort
-  Stock service failures are technical errors,
-  not stock statuses or business refusals.
+  Service failures are technical errors, not stock statuses.
 end note
-
 note bottom of SaleRepository
-  Sale, SaleLines, idempotency record and stock
-  changes commit together or roll back together.
-  Same key is processed once; compare the payload
-  before checking stock on a repeated sale request.
+  Sale, lines, stock and idempotency record commit together.
+  Process each key once; compare the payload before checking stock.
 end note
-
-note bottom of ReservationRepository
-  Reservation and related stock changes are atomic.
-  Expiry releases stock only if the owning reservation
-  has expired and no other commitment applies.
-end note
-
 @enduml

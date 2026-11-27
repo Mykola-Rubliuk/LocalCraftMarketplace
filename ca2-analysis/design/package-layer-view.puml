@@ -13,20 +13,22 @@ package "System boundary / application operations" as Application {
   component "ReservationService\nUC-02" as ReservationService
   component "OfflineReconciliationService\nUC-10" as OfflineService
   component "SaleService\nUC-01" as SaleService
-  component "OrderFulfilmentService\nUC-04 (intended)" as OrderService
+  component "OrderFulfilmentService\nUC-04" as OrderService
 }
 
 package "Domain responsibilities" as Domain {
   component "Reservation\nReservationPolicy" as ReservationDomain
   component "OfflineTransaction\nOfflineLine / ConflictChecker" as OfflineDomain
   component "Sale / SaleLine\nProduct / Maker" as SaleDomain
-  component "CustomerOrder / OrderLine\n(intended)" as OrderDomain
+  component "CustomerOrder / OrderLine" as OrderDomain
 }
 
 package "Shared contracts / persistence boundaries" as Contracts {
   interface StockAvailabilityPort as Stock
   interface SaleRecordingPort as Sales
   interface Clock as Time
+  interface CurrentUser as User <<proposed for UC-04>>
+  component "CustomerOrderRepository" as OrderRepo <<repository>>
   component "ReservationRepository" as ReservationRepo <<repository>>
   component "OfflineTransactionRepository" as OfflineRepo <<repository>>
   component "SaleRepository" as SaleRepo <<repository>>
@@ -65,7 +67,10 @@ SaleService ..> Time
 SaleService ..> SaleRepo
 SaleService ..> Catalogue
 
-OrderService --> OrderDomain : intended responsibilities
+OrderService --> OrderDomain
+OrderService ..> Time
+OrderService ..> User
+OrderService ..> OrderRepo
 
 StockProvider ..|> Stock
 TimeProvider ..|> Time
@@ -73,11 +78,12 @@ Persistence ..> ReservationRepo : supplies storage
 Persistence ..> OfflineRepo : supplies storage
 Persistence ..> SaleRepo : supplies storage
 Persistence ..> Catalogue : supplies storage
+Persistence ..> OrderRepo : supplies storage
 
 note right of OrderDomain
   UC-04 is in the selected scope.
-  Gherkin and SSD; detailed object
-  design is not present in the archive.
+  Line changes and derived order status.
+  CurrentUser is a proposed identity collaborator.
 end note
 
 note bottom of Infrastructure
