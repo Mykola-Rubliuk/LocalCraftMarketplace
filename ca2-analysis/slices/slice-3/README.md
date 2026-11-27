@@ -2,11 +2,11 @@
 
 **Working owner:** Bohdan Byrdin.
 
-**Links:** US-09, FR-13, NFR-05, A-08, A-10, Q-08, Q-09, SC-11–SC-15, Issue #3, PB-06.
+**Links:** US-09, FR-13, NFR-05, A-08, A-10, Q-08, Q-09, SC-11–SC-15, D-CA2-20, Issue #3, PB-06.
 
 **Controller:** `OfflineReconciliationService`
 
-**Shared interfaces required:** `SaleRecordingPort` (provided by Slice 4), `StockAvailabilityPort` (read-only, `getStatus`), `Clock` (`now`).
+**Shared interfaces required:** `SaleRecordingPort` (provided by Slice 4), `StockAvailabilityPort` (read-only, `getStatus`), `Clock` (`now`), `CurrentUser` (`getUserId`).
 
 ## 1. Purpose
 
@@ -49,7 +49,7 @@ This slice brings sales captured on the approved offline form during an internet
 ## 4. Provides / requires
 
 - **Provides:** `OfflineReconciliationService` with `enterOfflineTransaction`, `reconcile(entryId)`, `resolve(entryId, decision, note)`.
-- **Requires:** `OfflineTransactionRepository`, `StockAvailabilityPort.getStatus`, `SaleRecordingPort.recordSale` / `findRecordedResult`, `Clock.now`.
+- **Requires:** `OfflineTransactionRepository`, `StockAvailabilityPort.getStatus`, `SaleRecordingPort.recordSale` / `findRecordedResult`, `Clock.now`, `CurrentUser.getUserId`.
 - **Fakes:** `InMemoryOfflineTransactionRepository`, `InMemoryStockAvailability`, `RecordingSaleRecorder` (stores requests by idempotency key, returns the stored `Recorded(saleRef)` for the same key and payload, `Rejected(IdempotencyKeyConflict)` for the same key with a different payload, marks items Sold in the fake stock, and can simulate a lost response or timeout).
 
 ## 5. SaleRequest built by Slice 3
@@ -57,14 +57,14 @@ This slice brings sales captured on the approved offline form during an internet
 | Field | Value |
 |---|---|
 | `idempotencyKey` | `entryId` |
-| `processedBy` | Authorised Market Coordinator |
+| `processedBy` | ID of the authorised Market Coordinator signed in when the request is created, from `CurrentUser` |
 | `channel` | `OfflineMarket` |
 | `customerRef` | `null` |
 | `saleDate` | Offline transaction date |
 | `sourceRef` | `offlineRef` |
 | `lines` | One `SaleRequestLine` per `OfflineLine`: `itemCode`, `quantity`, `soldPrice`, optional `discountAmount` |
 
-The request is created once, stored on the `OfflineTransaction` (`saleRequest`) **before the first sale-recording attempt**, and reused unchanged on every retry.
+The request is created once, stored on the `OfflineTransaction` (`saleRequest`) **before the first sale-recording attempt**, and reused unchanged on every retry. `processedBy` therefore keeps its first value, even if another authorised Coordinator retries.
 
 ## 6. Sale recovery and idempotency
 
@@ -111,10 +111,11 @@ This prevents an offline sale that was already recorded (but whose response was 
 | Two lines, one sold | `ReferredToManager`; nothing sold |
 | Sale recorded, response lost, retry | Original `saleRef` recovered; `Reconciled`; one sale only |
 | `recordSale` times out | Still `AwaitingReconciliation`; `saleRequest` kept |
+| Retry by another authorised Coordinator | Stored `SaleRequest` reused; original `processedBy` kept |
 | Recovery lookup fails | Still `AwaitingReconciliation`; no sale call |
 | `Rejected(IdempotencyKeyConflict)` | `ReferredToManager(SaleRejected)`; detail stored |
 | Reconcile a reconciled entry | `OfflineOperationRejected`; one sale |
-| SC-15 Manager rejects with note | `Resolved`; decision and note stored; no sale |
+| SC-15 Manager rejects with note | `Resolved`; decision, note and signed-in Manager's ID (`resolvedBy`) stored; no sale |
 | Wrong role | `UnauthorisedCoordinator` / `UnauthorisedManager`; no change |
 | NFR-05 full run | No `AwaitingReconciliation` or `ReferredToManager` entries remain |
 

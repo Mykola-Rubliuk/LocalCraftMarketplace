@@ -15,7 +15,7 @@
 
 ## Main success flow
 1. Processor submits a `SaleRequest` through `SaleRecordingPort`.
-2. `SaleService` validates the request, processor and idempotency key.
+2. `SaleService` validates the request, processor and idempotency key. For a new in-store sale, it also checks that `processedBy` matches the signed-in user's ID from `CurrentUser`.
 3. `ProductCatalogue` resolves every item and its maker attribution.
 4. `SaleService` validates quantity, sold price and any discount.
 5. `SaleService` checks every item through `StockAvailabilityPort.getStatus(itemCode)`.
@@ -25,7 +25,7 @@
 
 ## Alternative / refusal flows
 - A1 — Empty line list: `Rejected(NoLines)`.
-- A2 — Unauthorised processor: `Rejected(UnauthorisedProcessor)`.
+- A2 — Unauthorised processor, or `processedBy` of a new in-store sale does not match the signed-in user: `Rejected(UnauthorisedProcessor)`.
 - A3 — Invalid price, quantity or discount: `Rejected(InvalidPrice / InvalidQuantity / InvalidDiscount)`.
 - A4 — Unknown item: `Rejected(ItemNotFound)`.
 - A5 — Any item is Reserved or Sold: `Rejected(ItemUnavailable)`. A reserved item is not sellable until Q-SH-01 is resolved and the shared contract is explicitly changed.

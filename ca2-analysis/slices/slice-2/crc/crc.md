@@ -1,6 +1,6 @@
 # Slice 2 - CRC Cards
 
-> Draft: these cards cover `viewOrder`, `markReady`, `recordCollection` and `recordCustomerDecision` (UC-04 steps 1–5, 2a, 4a and 4b). The Shop Volunteer's identity comes from `CurrentUser` (proposed, for group review).
+> Draft: these cards cover `viewOrder`, `markReady`, `recordCollection` and `recordCustomerDecision` (UC-04 steps 1–5, 2a, 4a and 4b). The Shop Volunteer's identity comes from `CurrentUser` (D-CA2-20).
 
 ## OrderFulfilmentService
 
@@ -46,7 +46,7 @@
 |---|---|
 | Provide the current date and time | |
 
-## CurrentUser (proposed)
+## CurrentUser (shared)
 
 | Responsibilities | Collaborators |
 |---|---|

@@ -12,6 +12,7 @@
 | Call `recordSale` only after a clean check | |
 | Handle reconciliation results: `Recorded` → Reconciled; `Rejected` (incl. `IdempotencyKeyConflict`) → referred; technical failure → no state change | |
 | Return `OfflineOperationResult` | |
+| Obtain the signed-in user's ID for `recordedBy`, `resolvedBy` and the `processedBy` of a new SaleRequest; never replace it in a stored request | CurrentUser |
 
 ## OfflineTransaction (entity)
 | Responsibilities | Collaborators |
@@ -64,3 +65,8 @@
 | Responsibilities | Collaborators |
 |---|---|
 | `now()` — provide the current date and time for `recordedAt`, `resolvedAt` and the "date not in the future" check | — |
+
+## CurrentUser (shared)
+| Responsibilities | Collaborators |
+|---|---|
+| `getUserId()` — provide the signed-in user's ID; identity only, not role checks | — |

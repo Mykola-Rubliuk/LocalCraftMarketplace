@@ -22,3 +22,6 @@
 
 
 8. **Consistency as an invariant.** The reservation coordinator must ensure that creating a reservation and changing the item's status to Reserved remain consistent. If reservation creation fails, the item must remain unchanged. Similarly, if stock cannot be reserved, no incomplete reservation should remain. During expiry evaluation, the reservation must not become Expired unless the corresponding stock operation succeeds or an appropriate consistency strategy is applied. The implementation needs an appropriate transaction boundary or explicit compensation to prevent partial changes.
+
+
+9. **Indirection — CurrentUser (D-CA2-20).** It sits between ReservationService and however sign-in works, providing the signed-in user's ID through getUserId(). ReservationService passes the ID to Reservation as a value, so Reservation does not depend on CurrentUser. Alternative: pass userId as an input to recordReservation. Rejected because the design would then have to ensure the supplied ID belongs to the signed-in user.

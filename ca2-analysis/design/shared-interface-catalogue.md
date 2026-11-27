@@ -58,7 +58,7 @@ The sale requires all-or-nothing behaviour across sale persistence and stock cha
 | Field | Required? | Meaning |
 |---|---|---|
 | `idempotencyKey` | Yes | Stable key for this sale request. Slice 3 uses the offline transaction's `entryId`. |
-| `processedBy` | Yes | Identifier of the authorised person submitting the sale. |
+| `processedBy` | Yes | Identifier of the authorised person submitting the sale. See `CurrentUser` (Section 4). |
 | `channel` | Yes | `InStore` or `OfflineMarket`. |
 | `customerRef` | No | Customer reference, if known. |
 | `saleDate` | No for in-store; required for offline | Date the customer actually made the purchase. If omitted for an in-store sale, Slice 4 uses `Clock.now()`. |
@@ -122,7 +122,24 @@ Clock supplies the current date and time only. Reservation working-day calculati
 - Slice 3 uses `now()` for `recordedAt` and manager-resolution timestamps.
 - Slice 4 uses `now()` for `recordedAt` and as the default in-store `saleDate`.
 
-## 4. Integration rules
+## 4. CurrentUser
+
+**Provider:** Shared identity abstraction  
+**Consumers:** Slice 1, Slice 2, Slice 3 and Slice 4  
+**Decision:** D-CA2-20 (Accepted)
+
+### Operation
+
+`getUserId(): String`
+
+CurrentUser supplies the signed-in user's ID only. It does not decide what the user is authorised to do. The ID is not a separate operation input. How sign-in works is outside this contract.
+
+- Slice 1 uses `getUserId()` for a reservation's `createdByUserId`.
+- Slice 2 uses `getUserId()` for an order line's `lastChangedBy`.
+- Slice 3 uses `getUserId()` for `recordedBy`, `resolvedBy` and the `processedBy` of a new `SaleRequest`. A stored request keeps its `processedBy` on retries.
+- Slice 4 compares `getUserId()` with `processedBy` for a new `InStore` sale and refuses a mismatch with `UnauthorisedProcessor`. `OfflineMarket` requests are not compared. This comparison is a Slice 4 rule that D-CA2-20 does not decide; see Q-SH-12 to Q-SH-14.
+
+## 5. Integration rules
 
 1. Shared operation names, request fields, status values and result names must be copied exactly into each slice's contracts and diagrams.
 2. A fake implementation must follow the same behaviour as the shared contract.

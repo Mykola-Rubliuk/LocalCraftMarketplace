@@ -18,6 +18,9 @@
 | Q-SH-08 | Is UC-10 confirmed as in CA2 scope? | Slice 3, PB-01, scenario selection |
 | Q-SH-10     | What is the agreed name of UC-04: 'Fulfil order lines' or 'Manage Customer Order'? Until agreed, UC-04 name is "Fulfil Order Lines".                               | Slice 2, README, PB-05, US-02, AD-02, scenario selection |
 | Q-SH-11     | Which use case records a customer order, now that UC-04 covers only fulfilment of order lines? FR-06 asks the system to record orders, but no slice does. | Slice 2 preconditions, FR-06 traceability, baseline change log |
+| Q-SH-12     | How does `SaleService` verify that an `OfflineMarket` request comes from offline reconciliation? Until then, a caller who can submit directly could use that channel to skip the `processedBy` match. | Slice 3 / Slice 4, SaleRecordingPort |
+| Q-SH-13     | How is it checked that the signed-in user may retry a sale request or receive its saved result? The current checks apply to `processedBy`. | Slice 3 / Slice 4, SaleRecordingPort |
+| Q-SH-14     | Which channel records a live sale that a Market Coordinator makes at a market? `SaleChannel` has only `InStore` and `OfflineMarket`. | Slice 4 use case and contract, SaleRequest, shared interface catalogue |
 
 ## Integration risks
 

@@ -9,16 +9,16 @@
 - Coordinate stock reservation.
 - Evaluate reservation expiry and coordinate stock release.
 - Return explicit success or rejection results.
-  Collaborators: Reservation, ReservationRepository, ReservationPolicy, StockAvailabilityPort, Clock.
-- Obtain the authenticated user's ID and associate it with the reservation.
+- Obtain the signed-in user's ID through CurrentUser and pass it to the new reservation as createdByUserId.
+  Collaborators: Reservation, ReservationRepository, ReservationPolicy, StockAvailabilityPort, Clock, CurrentUser.
 
 ## Reservation ##
 **Responsibilities:**
 - Maintain reservationId, itemCode, customer reference, conditions, status and agreed expiry date.
 - Maintain reservation status (Active or Expired).
 - Identify whether the reservation has expired based on its agreed expiry and the supplied date/time.
-  Collaborators: ReservationService, ReservationPolicy.
 - Store createdByUserId to identify the volunteer who created the reservation.
+  Collaborators: ReservationService, ReservationPolicy.
 
 ## ReservationPolicy ##
 **Responsibilities:**
@@ -52,3 +52,10 @@
 - Provide a consistent source of time for reservation operations.
 - Support controlled or fixed date/time values during testing.
 - Avoid direct system-clock dependencies in reservation logic.
+  Collaborators: ReservationService.
+
+## CurrentUser (shared) ##
+**Responsibilities:**
+- getUserId() — provide the signed-in user's ID.
+- Provide identity only; it does not decide what the user is authorised to do.
+  Collaborators: ReservationService.

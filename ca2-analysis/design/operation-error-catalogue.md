@@ -74,7 +74,7 @@ These are stored on an `OfflineTransaction` when it cannot safely be reconciled.
 | `InvalidPrice` | Selling price is missing, negative or otherwise invalid. | Reject; create no Sale and change no stock. |
 | `InvalidDiscount` | Discount violates the agreed discount rules. | Reject; create no Sale and change no stock. |
 | `MissingMakerAttribution` | Product/stock data has no valid maker attribution. | Reject; create no Sale or SaleLine. |
-| `UnauthorisedProcessor` | The submitting person is not authorised to record sales. | Reject before recording or changing stock. |
+| `UnauthorisedProcessor` | The submitting person is not authorised to record sales, or `processedBy` of a new `InStore` sale does not match the signed-in user. | Reject before recording or changing stock. |
 | `IdempotencyKeyConflict` | An existing idempotency key is reused with a different request payload. | Reject; do not create another Sale or change stock. |
 | `PersistenceFailed` | Sale or SaleLine persistence failed. | Technical failure; no partial sale or stock changes may remain. |
 

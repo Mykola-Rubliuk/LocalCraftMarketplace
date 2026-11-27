@@ -21,6 +21,7 @@ Each line contains `itemCode`, `quantity`, `soldPrice` and optional `discountAmo
 ### Preconditions
 - `idempotencyKey` and `processedBy` are supplied.
 - The processor is authorised to record sales.
+- For a new sale with channel `InStore`, `processedBy` matches the signed-in user's ID from `CurrentUser.getUserId()`.
 - `lines` contains at least one line.
 - Each item code resolves through ProductCatalogue.
 - Every item has maker attribution.
@@ -50,6 +51,13 @@ Each line contains `itemCode`, `quantity`, `soldPrice` and optional `discountAmo
 - `IdempotencyKeyConflict`
 
 The result is `Rejected(reason)`. No Sale/SaleLine or stock change is committed.
+
+### Signed-in user check
+`CurrentUser` (D-CA2-20) provides the signed-in user's ID only; authorisation is still checked separately. The ID is compared with `processedBy` after the idempotency checks, so only a new `InStore` sale is compared. A mismatch returns `Rejected(UnauthorisedProcessor)`. `OfflineMarket` requests are not compared, so a retry of a reconciliation by another Market Coordinator is not refused by this check.
+
+This check does not cover:
+- A caller who sets `channel = OfflineMarket` to skip the comparison; the design does not yet verify where an offline request comes from.
+- Whether the signed-in user may retry a request or receive its saved result.
 
 ### Idempotency
 - Same key + same payload: return the original result and do not create a second Sale.

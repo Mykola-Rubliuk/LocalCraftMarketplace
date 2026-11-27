@@ -5,7 +5,7 @@ Feature: Reconcile offline transactions
   So that no market transaction remains unaccounted for
 
   Background:
-    Given the market coordinator is signed in
+    Given the market coordinator "MC-1" is signed in
     And stock item "CER-103" is Available
     And stock item "CER-105" is Sold
 
@@ -16,7 +16,8 @@ Feature: Reconcile offline transactions
       When the market coordinator enters submission "SUB-1" with offline reference "OFF-03" dated "2026-11-14" for 1 x "CER-103" at 25.00
       Then the result is OfflineOperationSuccess
       And a new entry "E-03" is recorded as AwaitingReconciliation
-      And the offline reference, sale date, recordedBy and recordedAt are stored
+      And the offline reference, sale date and recordedAt are stored
+      And recordedBy is "MC-1"
 
     Scenario: Refuse an offline transaction with missing details
       When the market coordinator enters submission "SUB-5" with offline reference "OFF-05" and no lines
@@ -38,6 +39,7 @@ Feature: Reconcile offline transactions
       And no sale has been recorded for idempotency key "E-03"
       When the market coordinator reconciles entry "E-03"
       Then a SaleRequest with idempotency key "E-03", channel "OfflineMarket" and source reference "OFF-03" is stored on the entry
+      And the stored SaleRequest has processedBy "MC-1"
       And SaleRecordingPort records one sale and returns saleRef "S-100"
       And entry "E-03" is Reconciled with saleRef "S-100"
       And stock item "CER-103" is Sold
@@ -68,6 +70,13 @@ Feature: Reconcile offline transactions
       And entry "E-03" is Reconciled with saleRef "S-100"
       And entry "E-03" is not referred to the manager
       And only one sale exists for idempotency key "E-03"
+
+    Scenario: A retry by another coordinator keeps the original processedBy
+      Given entry "E-03" is AwaitingReconciliation with its stored SaleRequest with processedBy "MC-1"
+      And the authorised market coordinator "MC-2" is now signed in
+      When the market coordinator reconciles entry "E-03" again
+      Then the stored SaleRequest is reused
+      And the stored SaleRequest still has processedBy "MC-1"
 
     Scenario: Recovering the previous sale result fails
       Given entry "E-03" is AwaitingReconciliation with its stored SaleRequest
@@ -127,8 +136,10 @@ Feature: Reconcile offline transactions
     @SC-15
     Scenario: Manager resolves a referred offline transaction
       Given entry "E-04" is ReferredToManager
+      And the manager "MG-1" is signed in
       When the manager resolves entry "E-04" with decision "Rejected" and note "item already sold in the shop"
-      Then entry "E-04" is Resolved with the decision, note, resolvedBy and resolvedAt
+      Then entry "E-04" is Resolved with the decision, note and resolvedAt
+      And resolvedBy is "MG-1"
       And no sale is recorded from entry "E-04"
 
     Scenario: Only a manager may resolve a referred entry

@@ -46,7 +46,7 @@ These responsibilities belong to other project areas or require separate agreeme
 Its responsibilities include:
 
 1. Receiving requests through `SaleRecordingPort`.
-2. Checking that the processor is authorised.
+2. Checking that the processor is authorised and, for a new in-store sale, that `processedBy` matches the signed-in user.
 3. Validating the requested sale lines.
 4. Obtaining product and maker information.
 5. Checking item availability.
@@ -74,6 +74,7 @@ Detailed class responsibilities are documented separately in the CRC Cards.
 | `ProductCatalogue` | Provides product information and maker attribution. |
 | `Clock` | Provides the current date and time for sale recording. |
 | `ProcessorAuthorisationPort` | Confirms that the `processedBy` identifier in a `SaleRequest` belongs to an authorised Shop Volunteer or Market Coordinator. |
+| `CurrentUser` | Provides the signed-in user's ID for the new in-store sale check (D-CA2-20). The limits of this check are listed in the operation contract. |
 
 The exact method signatures and result types are maintained in the shared interface and operation contract documents.
 ## 5. Integration Boundaries

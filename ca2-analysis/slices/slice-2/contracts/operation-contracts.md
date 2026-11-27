@@ -6,6 +6,8 @@ Expected refusals are returned as result variants; technical failures are errors
 
 Access is checked before UC-04 starts, so no business refusal is defined for an unauthorised user.
 
+For `markReady`, `recordCollection` and `recordCustomerDecision`, the Shop Volunteer's ID is not an operation input. It comes from `CurrentUser.getUserId()` (D-CA2-20).
+
 ## OC-2.1 `viewOrder(orderId)`
 
 Cross-references: UC-04 steps 1–2 and 2a; FR-07.

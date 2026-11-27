@@ -8,12 +8,13 @@ Feature: Reserve an item
   Scenario: Successfully reserve an available item
     Given item "IT-201" exists and is available
     And customer "CU-001" provides all required reservation details
+    And the signed-in volunteer is "SV-1"
     When the volunteer records a reservation for item "IT-201"
     Then a reservation is created with status "Active"
     And the reservation is linked to customer "CU-001"
     And an agreed expiry date is assigned
     And item "IT-201" becomes reserved
-    And the reservation records the ID of the volunteer who created it
+    And the reservation records "SV-1" as the volunteer who created it
 
 
   Scenario: Reject a reservation for an unavailable item

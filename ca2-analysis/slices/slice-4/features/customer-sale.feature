@@ -73,6 +73,15 @@ Feature: Process a customer sale
     And no sale is created
     And item "IT-211" remains "Available"
 
+  Scenario: Reject a new in-store sale recorded under another user's ID
+    Given the signed-in user is "SV-1"
+    And "SV-2" is authorised to process sales
+    And item "IT-213" has stock status "Available"
+    When a new in-store sale containing item "IT-213" is submitted with processedBy "SV-2"
+    Then the result is "Rejected" with reason "UnauthorisedProcessor"
+    And no sale is created
+    And item "IT-213" remains "Available"
+
   Scenario: Return the original result when the same request is retried
     Given a sale request with idempotency key "SALE-REQ-01" has already been recorded
     When the same request with key "SALE-REQ-01" is submitted again

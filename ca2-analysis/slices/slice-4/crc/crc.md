@@ -6,6 +6,7 @@
 - Implement `SaleRecordingPort.recordSale(SaleRequest)`.
 - Validate request identity, processor authorisation and sale lines using `validateRequestAndIdempotency()`.
 - Enforce idempotency by retrieving and checking previously recorded sale results.
+- For a new `InStore` sale, refuse with `UnauthorisedProcessor` if `processedBy` does not match the ID from `CurrentUser.getUserId()`.
 - Resolve product and maker details through `ProductCatalogue.findItem()`.
 - Check every item's stock status through `StockAvailabilityPort.getStatus()`.
 - Obtain recording timestamps through `Clock.now()`.
@@ -13,7 +14,7 @@
 - Coordinate the all-or-nothing stock transition and sale persistence.
 - Return `Recorded(saleRef)` or `Rejected(reason)` and report technical failures separately.
 
-**Collaborators:** `SaleRecordingPort`, `Sale`, `SaleLine`, `SaleRepository`, `StockAvailabilityPort`, `ProductCatalogue`, `Clock`.
+**Collaborators:** `SaleRecordingPort`, `Sale`, `SaleLine`, `SaleRepository`, `StockAvailabilityPort`, `ProductCatalogue`, `Clock`, `CurrentUser`.
 
 ## Sale
 
@@ -75,6 +76,14 @@
 - Provide the current date and time through `now()`.
 - Supply the recordedAt timestamp.
 - Supply the date used as the default in-store saleDate when no explicit sale date is provided.
+
+**Collaborators:** `SaleService`.
+
+## CurrentUser (shared)
+
+**Responsibilities**
+- Provide the signed-in user's ID through `getUserId()`.
+- Provide identity only; it does not decide what the user is authorised to do.
 
 **Collaborators:** `SaleService`.
 

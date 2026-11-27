@@ -6,7 +6,7 @@
 
 **Controller / Provider:** `ReservationService`
 
-**Shared interface used:** `StockAvailabilityPort`
+**Shared interfaces used:** `StockAvailabilityPort`, `CurrentUser`
 
 ## 1. Purpose
 
@@ -56,7 +56,7 @@ Its responsibilities include:
 3. Checking whether the requested item exists and is available.
 4. Checking for conflicting active reservations.
 5. Obtaining the agreed expiry date through `ReservationPolicy`.
-6. Coordinating reservation creation and storage.
+6. Coordinating reservation creation and storage, including recording the signed-in volunteer's ID from `CurrentUser`.
 7. Requesting stock status changes from Available to Reserved.
 8. Evaluating active reservations through `evaluateExpiry()`.
 9. Expiring reservations that have reached their agreed expiry dates.
@@ -81,6 +81,7 @@ Detailed class responsibilities are documented separately in the CRC Cards.
 | `StockAvailabilityPort` | Checks and updates stock availability. |
 | `ReservationPolicy` | Calculates agreed reservation expiry dates. |
 | `Clock` | Provides current date and working-day calculations. |
+| `CurrentUser` | Provides the signed-in user's identity (D-CA2-20). |
 
 The exact method signatures and result types are maintained in the shared interface and operation contract documents.
 

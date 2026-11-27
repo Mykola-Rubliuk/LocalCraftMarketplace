@@ -23,7 +23,7 @@
 5. ReservationService checks ReservationRepository for an existing active reservation on the item.
 6. ReservationService obtains the current date through Clock.
 7. ReservationPolicy calculates the agreed expiry date using the approved reservation rules.
-8. ReservationService creates a Reservation record linked to the item and customer, with Active status and the agreed expiry date.
+8. ReservationService obtains the signed-in volunteer's ID through CurrentUser and creates a Reservation record linked to the item and customer, with Active status, the agreed expiry date and that ID as its creator.
 9. ReservationService persists the reservation through ReservationRepository.
 10. ReservationService marks the item Reserved through StockAvailabilityPort.
 11. System returns `ReservationConfirmed` with the reservation reference and agreed expiry date.
@@ -40,7 +40,7 @@
 
 ## **Postconditions**
 
-**Success:** one Active Reservation exists, linked to the item and customer; an agreed expiry date is recorded; the item is marked Reserved.\
+**Success:** one Active Reservation exists, linked to the item and customer; an agreed expiry date and the creating volunteer's ID are recorded; the item is marked Reserved.\
 **Failure:** no new Reservation exists; no existing reservation is modified; stock status remains unchanged.
 
 ## **Expiry evaluation**

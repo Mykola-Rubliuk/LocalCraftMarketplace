@@ -2,11 +2,11 @@
 
 **Working owner:** Maryna Tarasova.
 
-**Links:** US-02, FR-06, FR-07, BR-02, BR-03, A-04, Q-03, SC-04, D-CA2-06, D-CA2-14, D-CA2-15, D-CA2-18.
+**Links:** US-02, FR-06, FR-07, BR-02, BR-03, A-04, Q-03, SC-04, D-CA2-06, D-CA2-14, D-CA2-15, D-CA2-20.
 
 **Controller:** `OrderFulfilmentService`
 
-**Shared interface consumed:** `Clock`
+**Shared interfaces consumed:** `Clock`, `CurrentUser`
 
 ## 1. Purpose
 
@@ -81,7 +81,7 @@ This slice does not currently provide a shared interface to other slices.
 | Component | Purpose |
 |---|---|
 | `CustomerOrderRepository` | Finds orders with their lines, and saves an order and its changed line together. |
-| `CurrentUser` | Provides the signed-in user's identity (proposed, D-CA2-18; group review required). |
+| `CurrentUser` | Provides the signed-in user's identity (D-CA2-20). |
 | `Clock` | Provides the current date and time for a line's last change. |
 
 The operation inputs and result types are maintained in the operation contracts.
@@ -99,6 +99,7 @@ This slice does not use `StockAvailabilityPort` or `SaleRecordingPort`.
 ### Shared contract requirements
 
 - The current date and time must come from the shared `Clock` contract.
+- The signed-in user's ID must come from the shared `CurrentUser` contract (D-CA2-20). It is not an operation input, and `CurrentUser` does not decide authorisation.
 - Expected refusals must be returned as result variants, and technical failures reported as errors (D-CA2-02).
 - Error names and meanings must match the shared operation and error catalogue.
 - Changes to shared interfaces must be reviewed by affected slice owners before integration.
@@ -141,4 +142,4 @@ The following documents contain the detailed design information for this slice:
 | [Decision log](../../decisions/decision-log.md) | Design decisions and their review status. |
 | [Open questions](../../decisions/open-questions.md) | Unresolved questions, including Q-03, Q-SH-10 and Q-SH-11. |
 | [Operation and error catalogue](../../design/operation-error-catalogue.md) | Shared refusal names and expected handling. |
-| [Shared interface catalogue](../../design/shared-interface-catalogue.md) | Shared `Clock` contract. |
+| [Shared interface catalogue](../../design/shared-interface-catalogue.md) | Shared `Clock` and `CurrentUser` contracts. |

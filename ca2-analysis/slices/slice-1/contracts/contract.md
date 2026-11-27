@@ -1,4 +1,7 @@
-## OC-1.1 — recordReservation(itemCode, customerRef, conditions, userId) ##
+## OC-1.1 — recordReservation(itemCode, customerRef, conditions) ##
+
+The volunteer's ID is not an operation input. It comes from `CurrentUser.getUserId()` (D-CA2-20).
+
 **Preconditions**
 
 - The volunteer is authenticated and authorised to record reservations.
@@ -14,7 +17,7 @@
 **Postconditions on success**
 
 
-- The reservation records the ID of the volunteer who created it.
+- The reservation's createdByUserId is set to the signed-in volunteer's ID, obtained through CurrentUser.getUserId().
 - One Reservation is created with a unique reservationId.
 - The Reservation is linked to the relevant item and customer.
 - The Reservation status is set to Active.

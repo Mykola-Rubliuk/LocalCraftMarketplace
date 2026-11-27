@@ -8,6 +8,7 @@ participant ReservationService
 participant StockAvailabilityPort as Stock
 participant ReservationRepository as Repo
 participant ReservationPolicy as Policy
+participant CurrentUser as User
 participant Clock
 entity Reservation
 
@@ -26,6 +27,9 @@ else valid request
         ReservationService --> Volunteer: Rejected(ConflictingReservation)
     else no active reservation
 
+        ReservationService -> User: getUserId()
+        User --> ReservationService: createdByUserId
+
         ReservationService -> Clock: now()
         Clock --> ReservationService: currentDateTime
 
@@ -33,7 +37,7 @@ else valid request
         Policy --> ReservationService: agreedExpiry
 
         create Reservation
-        ReservationService -> Reservation: create(itemCode, customerRef, conditions, agreedExpiry)
+        ReservationService -> Reservation: create(itemCode, customerRef, conditions, agreedExpiry, createdByUserId)
         Reservation --> ReservationService: Active reservation
 
         ReservationService -> Repo: save(reservation)

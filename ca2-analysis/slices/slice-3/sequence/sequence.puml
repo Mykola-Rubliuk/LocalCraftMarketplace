@@ -8,6 +8,7 @@ participant "tx:OfflineTransaction" as Tx
 participant ":SaleRecordingPort" as Sales
 participant ":ConflictChecker" as Chk
 participant ":StockAvailabilityPort" as Stock
+participant ":CurrentUser" as User
 
 C -> Svc : reconcile(entryId)
 Svc -> Svc : requireCoordinatorRole()
@@ -18,7 +19,9 @@ alt tx not found or tx.status != AwaitingReconciliation
   Svc --> C : OfflineOperationRejected(reason)
 else awaiting reconciliation
   alt tx.saleRequest is empty (first attempt)
-    Svc -> Svc : build SaleRequest(idempotencyKey = entryId,\nprocessedBy = coordinator, channel = OfflineMarket,\ncustomerRef = null, saleDate = tx.saleDate,\nsourceRef = tx.offlineRef, lines = tx lines)
+    Svc -> User : getUserId()
+    User --> Svc : userId
+    Svc -> Svc : build SaleRequest(idempotencyKey = entryId,\nprocessedBy = userId, channel = OfflineMarket,\ncustomerRef = null, saleDate = tx.saleDate,\nsourceRef = tx.offlineRef, lines = tx lines)
     Svc -> Tx : saleRequest = request
     Svc -> Repo : save(tx)
   else retry

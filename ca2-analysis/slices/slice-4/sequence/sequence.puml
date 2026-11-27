@@ -5,6 +5,7 @@ actor "Shop Volunteer / Market Coordinator" as Processor
 participant SaleRecordingPort as Port
 participant SaleService
 participant "ProcessorAuthorisationPort\n(proposed, Q-SH-07)" as Auth
+participant CurrentUser as User
 participant SaleRepository as Repo
 participant ProductCatalogue as Catalogue
 participant StockAvailabilityPort as Stock
@@ -34,6 +35,15 @@ end
 break same key, different payload
   SaleService --> Port: Rejected(IdempotencyKeyConflict)
   Port --> Processor: Rejected(IdempotencyKeyConflict)
+end
+
+opt new sale with channel InStore
+  SaleService -> User: getUserId()
+  User --> SaleService: userId
+  break userId does not match processedBy
+    SaleService --> Port: Rejected(UnauthorisedProcessor)
+    Port --> Processor: Rejected(UnauthorisedProcessor)
+  end
 end
 
 loop each requested line

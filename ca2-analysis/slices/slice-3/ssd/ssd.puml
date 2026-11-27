@@ -5,7 +5,7 @@ actor Manager as M
 participant ":System" as S
 
 loop for each completed offline form
-  C -> S : enterOfflineTransaction(submissionId, offlineRef, saleDate, recordedBy, lines)
+  C -> S : enterOfflineTransaction(submissionId, offlineRef, saleDate, lines)
   S --> C : OfflineOperationResult\n(Success: entry AwaitingReconciliation | ReferredToManager(DuplicateReference)\n | Rejected: InvalidOfflineEntry)
 end
 

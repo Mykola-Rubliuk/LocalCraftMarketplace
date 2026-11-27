@@ -16,9 +16,9 @@
 
 1. Coordinator selects a completed offline form.
 2. Coordinator enters the submission, offline reference, sale date and lines (item code, quantity, sold price).
-3. System validates the data, creates an `OfflineTransaction` with a new `entryId` and status `AwaitingReconciliation`, and returns the entry.
+3. System validates the data, creates an `OfflineTransaction` with a new `entryId` and status `AwaitingReconciliation`, records the signed-in Coordinator's ID from `CurrentUser` as `recordedBy`, and returns the entry.
 4. Coordinator asks the system to reconcile the entry by `entryId`.
-5. System creates the `SaleRequest` for the entry and stores it on the entry.
+5. System creates the `SaleRequest` for the entry, with the signed-in Coordinator's ID as `processedBy`, and stores it on the entry.
 6. System asks `SaleRecordingPort` whether a sale was already recorded for this request; none is found.
 7. System checks the offline reference for duplicates and every line's stock status; no problem is found.
 8. System records the sale through `SaleRecordingPort`, stores the returned `saleRef` and marks the entry `Reconciled`.
@@ -34,7 +34,7 @@
 
 **A4 — Sale rejected (from step 6 or 8):** `SaleRecordingPort` returns `Rejected(reason)`, including `IdempotencyKeyConflict` or a stock change after the check. System marks the entry `ReferredToManager` with reason `SaleRejected` and the underlying reason as detail.
 
-**A5 — Manager resolution (after A1, A3 or A4):** Manager selects the referred entry by `entryId`, records a `ResolutionDecision` and a note; system marks it `Resolved`. No sale is recorded; refunds and payment corrections are handled outside the system (BR-05).
+**A5 — Manager resolution (after A1, A3 or A4):** Manager selects the referred entry by `entryId`, records a `ResolutionDecision` and a note; system records the signed-in Manager's ID as `resolvedBy` and marks it `Resolved`. No sale is recorded; refunds and payment corrections are handled outside the system (BR-05).
 
 **A6 — Same submission re-sent (from step 3):** The `submissionId` is already stored. System returns the existing entry and creates nothing.
 
@@ -42,7 +42,7 @@
 
 **E1 — Incomplete form data (from step 2):** System refuses the entry with `InvalidOfflineEntry`, stores nothing and lists the invalid fields.
 
-**E2 — Technical failure (steps 5–8):** Persistence, stock service or sale recording fails or times out. The entry remains `AwaitingReconciliation` with its stored `SaleRequest`. The Coordinator retries later; the same request and idempotency key are reused, so no second sale can be recorded.
+**E2 — Technical failure (steps 5–8):** Persistence, stock service or sale recording fails or times out. The entry remains `AwaitingReconciliation` with its stored `SaleRequest`. The Coordinator retries later; the same request and idempotency key are reused, so no second sale can be recorded. The stored request keeps its original `processedBy`, even if another authorised Coordinator retries.
 
 **E3 — Unauthorised user:** A non-Coordinator entering or reconciling, or a non-Manager resolving, is refused; nothing changes.
 

@@ -1,5 +1,5 @@
 @startuml
- title Integrated Design Class Diagram — Local Craft Marketplace (Slices 1, 3 and 4)
+ title Integrated Design Class Diagram — Local Craft Marketplace (Slices 1, 2, 3 and 4)
  left to right direction
  skinparam packageStyle rectangle
  skinparam classAttributeIconSize 0
@@ -27,6 +27,10 @@
 
    interface Clock <<shared port>> {
      +now(): DateTime
+   }
+
+   interface CurrentUser <<shared port>> {
+     +getUserId(): String
    }
 
    enum StockStatus {
@@ -103,7 +107,8 @@
      +conditions: ReservationConditions
      +status: ReservationStatus
      +agreedExpiry: DateTime
-     +create(itemCode: String, customerRef: String, conditions: ReservationConditions, agreedExpiry: DateTime): Reservation
+     +createdByUserId: String
+     +create(itemCode: String, customerRef: String, conditions: ReservationConditions, agreedExpiry: DateTime, createdByUserId: String): Reservation
      +getAgreedExpiry(): DateTime
      +expire(): void
    }
@@ -140,11 +145,104 @@
  }
 
 ' ============================================================
+' SLICE 2 — ORDER FULFILMENT
+' ============================================================
+ package "Slice 2 — Fulfil Order Lines (UC-04)" as S2 {
+   class OrderFulfilmentService <<controller>> {
+     +viewOrder(orderId: String): OrderViewResult
+     +markReady(orderId: String, lineId: String): LineChangeResult
+     +recordCollection(orderId: String, lineId: String): LineChangeResult
+     +recordCustomerDecision(orderId: String, lineId: String, decision: CustomerDecision, decisionReason: DecisionReason?): LineChangeResult
+   }
+
+   class CustomerOrder <<entity / aggregate root>> {
+     +orderId: String
+     +orderStatus: OrderStatus
+     +getStatus(): OrderStatus
+     +getLineDetails(): List<OrderLineDetails>
+     +markLineReady(lineId: String, changedBy: String, changedAt: DateTime): LineChangeResult
+     +markLineCollected(lineId: String, changedBy: String, changedAt: DateTime): LineChangeResult
+     +recordLineDecision(lineId: String, decision: CustomerDecision, decisionReason: DecisionReason?, changedBy: String, changedAt: DateTime): LineChangeResult
+     -findLine(lineId: String): OrderLine
+     -recalculateStatus(): void
+   }
+
+   class OrderLine <<entity>> {
+     +lineId: String
+     +fulfilmentStatus: OrderLineStatus
+     +decisionReason: DecisionReason?
+     +lastChangedBy: String?
+     +lastChangedAt: DateTime?
+     +getLineId(): String
+     +getStatus(): OrderLineStatus
+     +markReady(changedBy: String, changedAt: DateTime): LineTransitionResult
+     +markCollected(changedBy: String, changedAt: DateTime): LineTransitionResult
+     +applyDecision(decision: CustomerDecision, decisionReason: DecisionReason?, changedBy: String, changedAt: DateTime): LineTransitionResult
+     +isClosed(): Boolean
+   }
+
+   class CustomerOrderRepository <<repository>> {
+     +findById(orderId: String): CustomerOrder?
+     +save(order: CustomerOrder): void
+   }
+
+   class OrderLineDetails <<value object>> {
+     +lineId: String
+     +lineStatus: OrderLineStatus
+   }
+
+   enum OrderStatus {
+     Open
+     Completed
+   }
+
+   enum OrderLineStatus {
+     BeingMade
+     Ready
+     Collected
+     Cancelled
+     Substituted
+   }
+
+   enum CustomerDecision {
+     Cancelled
+     Substituted
+   }
+
+   enum DecisionReason {
+     NotGiven
+   }
+
+   class LineTransitionResult <<validation result>> {
+     +accepted: Boolean
+     +reason: String?
+   }
+
+   abstract class OrderViewResult <<business result>>
+   class OrderViewed {
+     +orderStatus: OrderStatus
+     +lines: List<OrderLineDetails>
+   }
+   class OrderViewRejected {
+     +reason: String
+   }
+
+   abstract class LineChangeResult <<business result>>
+   class LineChangeRecorded {
+     +lineStatus: OrderLineStatus
+     +orderStatus: OrderStatus
+   }
+   class LineChangeRejected {
+     +reason: String
+   }
+ }
+
+' ============================================================
 ' SLICE 3 — OFFLINE RECONCILIATION
 ' ============================================================
  package "Slice 3 — Reconcile Offline Transactions (UC-10)" as S3 {
    class OfflineReconciliationService <<controller>> {
-     +enterOfflineTransaction(submissionId: String, offlineRef: String, saleDate: Date, recordedBy: String, lines: List<OfflineLine>): OfflineOperationResult
+     +enterOfflineTransaction(submissionId: String, offlineRef: String, saleDate: Date, lines: List<OfflineLine>): OfflineOperationResult
      +reconcile(entryId: String): OfflineOperationResult
      +resolve(entryId: String, decision: ResolutionDecision, note: String): OfflineOperationResult
      -requireCoordinatorRole(): void
@@ -300,13 +398,23 @@
 
  ReservationService ..> StockAvailabilityPort : uses
  ReservationService ..> Clock : uses
+ ReservationService ..> CurrentUser : identifies creator
  ReservationService --> ReservationRepository : coordinates
  ReservationService --> ReservationPolicy : asks expiry
  ReservationService --> Reservation : creates / updates
  ReservationRepository --> Reservation : stores
 
+ OrderFulfilmentService ..> Clock : timestamps line changes
+ OrderFulfilmentService ..> CurrentUser : identifies who made change
+ OrderFulfilmentService --> CustomerOrderRepository : finds / saves
+ OrderFulfilmentService --> CustomerOrder : views / changes lines
+ CustomerOrderRepository --> CustomerOrder : stores / retrieves
+ CustomerOrder "1" *-- "1..*" OrderLine : contains
+ CustomerOrder ..> OrderLineDetails : returns
+
  OfflineReconciliationService ..> SaleRecordingPort : records / recovers sale
  OfflineReconciliationService ..> Clock : timestamps records
+ OfflineReconciliationService ..> CurrentUser : identifies recorder / processor / resolver
  OfflineReconciliationService --> OfflineTransactionRepository : stores / retrieves
  OfflineReconciliationService --> ConflictChecker : asks for conflict check
  OfflineReconciliationService --> OfflineTransaction : creates / changes state
@@ -317,6 +425,7 @@
  SaleService ..> StockAvailabilityPort : validates and sells stock
  SaleService ..> StockLine : maps stock batch request
  SaleService ..> Clock : recordedAt / default saleDate
+ SaleService ..> CurrentUser : checks new InStore processedBy
  SaleService --> ProductCatalogue : resolves item and maker
  SaleService --> SaleRepository : reads idempotency / persists
  SaleService --> Sale : creates
@@ -341,6 +450,10 @@
  OfflineOperationResult <|-- OfflineOperationSuccess
  OfflineOperationResult <|-- OfflineOperationRejected
  OfflineOperationSuccess --> "1" OfflineTransaction : returns
+ OrderViewResult <|-- OrderViewed
+ OrderViewResult <|-- OrderViewRejected
+ LineChangeResult <|-- LineChangeRecorded
+ LineChangeResult <|-- LineChangeRejected
 
 
 ' Contract constraints (not extra implementation classes).
@@ -362,6 +475,46 @@ note right of OfflineReconciliationService
   Serialize processing for the same entryId.
   Technical failures leave the entry retryable;
   only Recorded permits Reconciled.
+end note
+
+note right of OrderLine
+  Allowed: BeingMade -> Ready; Ready -> Collected;
+  BeingMade or Ready -> Cancelled or Substituted.
+  A decision needs a reason. Status is checked
+  before the reason. A refusal changes nothing.
+  Collected, Cancelled and Substituted are closed.
+end note
+
+note bottom of CustomerOrder
+  Completed when all lines are closed, otherwise Open.
+  Completed does not mean any line was collected.
+end note
+
+note bottom of CustomerOrderRepository
+  Order status and the changed line are saved together.
+  No partial change; Recorded only after commit.
+end note
+
+note bottom of DecisionReason
+  Predefined list shared by both decisions.
+  Only NotGiven is agreed so far.
+end note
+
+note bottom of LineChangeResult
+  LineChangeRecorded = Recorded(lineStatus, orderStatus).
+  LineChangeRejected and OrderViewRejected = Rejected(reason).
+end note
+
+note bottom of CurrentUser
+  Signed-in user's identity only (D-CA2-20).
+  It does not decide authorisation.
+end note
+
+note bottom of SaleService
+  New InStore sale: processedBy must match
+  CurrentUser, else Rejected(UnauthorisedProcessor).
+  OfflineMarket is not compared; request origin
+  is not verified (Q-SH-12).
 end note
 
 note bottom of StockAvailabilityPort
