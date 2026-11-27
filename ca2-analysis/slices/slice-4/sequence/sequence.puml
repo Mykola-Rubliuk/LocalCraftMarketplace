@@ -1,0 +1,81 @@
+@startuml
+title UC-01 Process a customer sale — object interaction
+
+actor "Shop Volunteer / Market Coordinator" as Processor
+participant SaleRecordingPort as Port
+participant SaleService
+participant ProductCatalogue as Catalogue
+participant StockAvailabilityPort as Stock
+participant SaleRepository as Repo
+participant Clock
+entity Sale
+entity SaleLine
+
+Processor -> Port: recordSale(SaleRequest)
+Port -> SaleService: recordSale(request)
+SaleService -> SaleService: validateRequestAndIdempotency()
+SaleService -> Repo: findResultByIdempotencyKey(key)
+Repo --> SaleService: existing result / no result
+
+alt same key and same payload already recorded
+  SaleService --> Port: Recorded(existingSaleRef)
+  Port --> Processor: Recorded(existingSaleRef)
+else new request
+  loop each requested line
+    SaleService -> Catalogue: findItem(itemCode)
+    Catalogue --> SaleService: product + maker attribution
+    SaleService -> Stock: getStatus(itemCode)
+    Stock --> SaleService: Available / other status
+  end
+
+alt same key and same payload already recorded
+    SaleService --> Port: Recorded(existingSaleRef)
+
+else same key with different payload
+    SaleService --> Port: Rejected(IdempotencyKeyConflict)
+
+else new request
+    ' Continue sale processing
+end
+
+  alt any line invalid or unavailable
+    SaleService --> Port: Rejected(reason)
+    Port --> Processor: Rejected(reason)
+    note over SaleService,Stock
+      No Sale/SaleLine is committed.
+      No stock item changes.
+    end note
+  else all lines valid and Available
+    SaleService -> Clock: now()
+    Clock --> SaleService: recordedAt
+    create Sale
+    SaleService -> Sale: create(request, recordedAt)
+    loop each valid line
+      create SaleLine
+      SaleService -> SaleLine: create(item, maker, soldPrice, quantity, discount)
+      SaleService -> Sale: addLine(line)
+    end
+    SaleService -> Stock: sellAllIfAvailable(stockLines, idempotencyKey)
+    Stock --> SaleService: Updated(Sold) / Rejected(reason)
+    alt stock transition rejected
+      SaleService --> Port: Rejected(ItemUnavailable)
+      Port --> Processor: Rejected(ItemUnavailable)
+    else stock transition successful
+      SaleService -> Repo: persist(sale, idempotencyKey)
+      Repo --> SaleService: committed(saleRef) / technical failure
+      alt persistence successful
+        SaleService --> Port: Recorded(saleRef)
+        Port --> Processor: Recorded(saleRef)
+      else persistence failed
+        note over SaleService,Repo
+          The stock update and sale persistence must share
+          a transaction or use an agreed compensation protocol.
+          Do not leave a partial sale or stock change.
+        end note
+        SaleService --> Port: TechnicalFailure(PersistenceFailed)
+        Port --> Processor: TechnicalFailure(PersistenceFailed)
+      end
+    end
+  end
+end
+@enduml

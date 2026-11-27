@@ -1,0 +1,45 @@
+@startuml
+title Sequence — markReady(orderId, lineId)
+actor "Shop Volunteer" as V
+participant "OrderFulfilmentService" as Svc
+participant "CustomerOrderRepository" as Repo
+participant "CurrentUser" as User
+participant "Clock" as Clock
+participant "CustomerOrder" as Order
+participant "OrderLine" as Line
+
+V -> Svc : markReady(orderId, lineId)
+Svc -> Repo : findById(orderId)
+Repo --> Svc : order
+Svc -> User : getUserId()
+User --> Svc : changedBy
+Svc -> Clock : now()
+Clock --> Svc : changedAt
+
+Svc -> Order : markLineReady(lineId, changedBy, changedAt)
+Order -> Order : findLine(lineId)
+Order -> Line : markReady(changedBy, changedAt)
+
+alt line is BeingMade
+  Line -> Line : set status Ready,\nlastChangedBy, lastChangedAt
+  Line --> Order : accepted
+  Order -> Order : recalculateStatus()
+  loop each line
+    Order -> Line : isClosed()
+    note right : sent to every line\nin the order
+    Line --> Order : closed | not closed
+  end
+  Order --> Svc : Recorded(lineStatus, orderStatus)
+  Svc -> Repo : save(order)
+  Repo --> Svc : committed
+  note over Svc, Repo
+    Recorded is returned only after the commit.
+    A technical failure leaves no partial change.
+  end note
+  Svc --> V : Recorded(lineStatus, orderStatus)
+else line is not BeingMade
+  Line --> Order : Rejected(InvalidStatusChange)
+  Order --> Svc : Rejected(InvalidStatusChange)
+  Svc --> V : Rejected(InvalidStatusChange)
+end
+@enduml
