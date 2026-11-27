@@ -10,6 +10,7 @@
 - Evaluate reservation expiry and coordinate stock release.
 - Return explicit success or rejection results.
   Collaborators: Reservation, ReservationRepository, ReservationPolicy, StockAvailabilityPort, Clock.
+- Obtain the authenticated user's ID and associate it with the reservation.
 
 ## Reservation ##
 **Responsibilities:**
@@ -17,6 +18,7 @@
 - Maintain reservation status (Active or Expired).
 - Identify whether the reservation has expired based on its agreed expiry and the supplied date/time.
   Collaborators: ReservationService, ReservationPolicy.
+- Store createdByUserId to identify the volunteer who created the reservation.
 
 ## ReservationPolicy ##
 **Responsibilities:**
