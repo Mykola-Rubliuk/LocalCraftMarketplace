@@ -8,3 +8,11 @@
 | **Files affected** | `slices/slice-3/README.md`, `use-case.md`, `features/offline-reconciliation.feature`, `ssd/ssd.puml`, `contracts/operation-contracts.md`, `crc/crc.md`, `grasp/grasp.md`, `sequence/sequence.puml`; rows in `decisions/decision-log.md`, `decisions/open-questions.md`; PB-06 in `backlog/product-backlog.md` |
 | **Review, verification and changes** | Checked identifiers and terms against `docs/glossary.md`, the CA1 dossier (UC-10, SC-11–SC-15), `design/integrated-design-class-diagram.puml` and `design/operation-error-catalogue.md`; rendered the PlantUML files in IntelliJ; removed the separate class diagram in favour of the integrated diagram; committed the work in separate commits;|
 | **Human decisions** | Adopted the Slice 4 folder structure; accepted entryId-based selection and Manager resolution without a sale as agreed in the integration review |
+
+## Marian Andrei Rogojina ##
+**AI TOOL:** ChatGPT
+
+- I have used ChatGPT to expand on the points I was making because my writing would have been too vague to give proper insight on my slice work.
+- The prompts used were to expand my writing for more detail, and to pinpoint what documents I need to modify such as "Do I need to update reserve.puml" or "Would customerRef make up for an userId" 
+- The artefact affected was the Slice 1 documentary. 
+- I have reviewed the AI-Generated content by checking what I was asked to do, seeing if the AI was accurate, and what was not, I have modified it accordingly to properly do what I need to do while understanding the changes I am making.

@@ -1,6 +1,8 @@
 # Shared Interface Catalogue
 
-**Status:** Proposed contracts for group review. These definitions are the common reference for Slice 1, Slice 2, Slice 3 and Slice 4. They are design contracts, not evidence of a completed implementation.
+**Status:** Proposed contracts for group review. 
+These definitions are the common reference for Slice 1, Slice 2, Slice 3 and Slice 4. 
+They are design contracts, not evidence of a completed implementation.
 
 ## 1. StockAvailabilityPort
 

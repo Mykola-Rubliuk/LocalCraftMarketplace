@@ -1,6 +1,7 @@
-## OC-1.1 — recordReservation(itemCode, customerRef, conditions) ##
+## OC-1.1 — recordReservation(itemCode, customerRef, conditions, userId) ##
 **Preconditions**
 
+- The volunteer is authenticated and authorised to record reservations.
 - itemCode identifies an existing item in StockAvailabilityPort.
 - customerRef identifies the customer requesting the reservation.
 - conditions are supplied and contain all required reservation details.
@@ -13,7 +14,7 @@
 **Postconditions on success**
 
 
-
+- The reservation records the ID of the volunteer who created it.
 - One Reservation is created with a unique reservationId.
 - The Reservation is linked to the relevant item and customer.
 - The Reservation status is set to Active.

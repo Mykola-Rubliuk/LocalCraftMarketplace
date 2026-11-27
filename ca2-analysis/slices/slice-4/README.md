@@ -73,9 +73,9 @@ Detailed class responsibilities are documented separately in the CRC Cards.
 | `StockAvailabilityPort` | Checks and updates stock availability. |
 | `ProductCatalogue` | Provides product information and maker attribution. |
 | `Clock` | Provides the current date and time for sale recording. |
+| `ProcessorAuthorisationPort` | Confirms that the `processedBy` identifier in a `SaleRequest` belongs to an authorised Shop Volunteer or Market Coordinator. |
 
 The exact method signatures and result types are maintained in the shared interface and operation contract documents.
-
 ## 5. Integration Boundaries
 
 ### Interaction with other slices

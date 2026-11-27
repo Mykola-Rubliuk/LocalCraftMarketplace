@@ -23,4 +23,3 @@
 
 - SaleRepository persistence and stock state changes may be separate resources. The group must agree the transaction boundary or a safe prepare/commit/compensation design before claiming cross-resource atomicity is implemented.
 - Slice 3 can read stock before calling SaleRecordingPort, but stock may change between the read and the sale call. Slice 4 must re-check and perform the atomic stock transition.
-- The uploaded archive does not contain `docs/agreed-baseline.md`, `docs/baseline-change-log.md` or an existing shared contract test file. These artefacts are required for a complete baseline and test review.
