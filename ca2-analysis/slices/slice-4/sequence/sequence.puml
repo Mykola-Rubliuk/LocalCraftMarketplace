@@ -1,0 +1,122 @@
+@startuml
+title UC-01 Process a customer sale — object interaction
+
+actor "Shop Volunteer / Market Coordinator" as Processor
+participant SaleRecordingPort as Port
+participant SaleService
+participant "ProcessorAuthorisationPort\n(proposed)" as Auth
+participant SaleRepository as Repo
+participant ProductCatalogue as Catalogue
+participant StockAvailabilityPort as Stock
+participant Clock
+entity Sale
+entity SaleLine
+
+Processor -> Port: recordSale(SaleRequest)
+Port -> SaleService: recordSale(request)
+SaleService -> Auth: isAuthorised(caller)
+note right of Auth: For a new direct sale, verify processedBy against caller.
+
+Auth --> SaleService: authorised / not authorised
+break not authorised
+  SaleService --> Port: Rejected(UnauthorisedProcessor)
+  Port --> Processor: Rejected(UnauthorisedProcessor)
+end
+
+SaleService -> SaleService: validateRequestAndIdempotency(request)
+SaleService -> Repo: findByIdempotencyKey(key)
+Repo --> SaleService: IdempotencyRecord / no record / technical failure
+
+break lookup failed
+  SaleService --> Port: TechnicalFailure(PersistenceFailed)
+  Port --> Processor: TechnicalFailure(PersistenceFailed)
+end
+
+break same key, same payload already recorded
+  SaleService --> Port: Recorded(existingSaleRef)
+  Port --> Processor: Recorded(existingSaleRef)
+end
+
+break same key, different payload
+  SaleService --> Port: Rejected(IdempotencyKeyConflict)
+  Port --> Processor: Rejected(IdempotencyKeyConflict)
+end
+
+loop each requested line
+  SaleService -> Catalogue: findItem(itemCode)
+  Catalogue --> SaleService: product + maker attribution
+  SaleService -> Stock: getStatus(itemCode)
+  Stock --> SaleService: Available / other status
+end
+
+break any line invalid or unavailable
+  SaleService --> Port: Rejected(reason)
+  Port --> Processor: Rejected(reason)
+  note over SaleService,Stock
+    No Sale/SaleLine is committed.
+    No stock item changes.
+  end note
+end
+
+SaleService -> Clock: now()
+Clock --> SaleService: recordedAt
+create Sale
+SaleService -> Sale: create(request, recordedAt)
+loop each valid line
+  create SaleLine
+  SaleService -> SaleLine: create(item, maker, soldPrice, quantity, discount)
+  SaleService -> Sale: addLine(line)
+end
+
+SaleService -> Stock: sellAllIfAvailable(stockLines, idempotencyKey)
+Stock --> SaleService: Updated(Sold) / Rejected(reason) / technical failure
+
+break technical stock failure
+  SaleService --> Port: TechnicalFailure(reason)
+  Port --> Processor: TechnicalFailure(reason)
+end
+
+break stock transition rejected
+  SaleService --> Port: Rejected(reason)
+  Port --> Processor: Rejected(reason)
+end
+
+SaleService -> SaleService: construct record(key, requestFingerprint, saleRef)
+SaleService -> Repo: persist(sale, record: IdempotencyRecord)
+Repo --> SaleService: committed(saleRef) / technical failure
+
+alt persistence successful
+  SaleService --> Port: Recorded(saleRef)
+  Port --> Processor: Recorded(saleRef)
+else persistence failed
+  note over SaleService,Repo
+    The stock update and sale persistence must share
+    a transaction or use an agreed compensation protocol.
+    Do not leave a partial sale or stock change.
+  end note
+  SaleService --> Port: TechnicalFailure(PersistenceFailed)
+  Port --> Processor: TechnicalFailure(PersistenceFailed)
+end
+== Read-only sale recovery ==
+Processor -> Port: findRecordedResult(request)
+Port -> SaleService: findRecordedResult(request)
+SaleService -> Auth: isAuthorised(caller)
+Auth --> SaleService: authorised / not authorised
+alt caller not authorised
+  SaleService --> Port: Rejected(UnauthorisedProcessor)
+else authorised caller
+  SaleService -> Repo: findByIdempotencyKey(key)
+  Repo --> SaleService: IdempotencyRecord / no record / technical failure
+  alt same key and payload
+    SaleService --> Port: Recorded(originalSaleRef)
+  else same key, different payload
+    SaleService --> Port: Rejected(IdempotencyKeyConflict)
+  else lookup failed
+    SaleService --> Port: TechnicalFailure(PersistenceFailed)
+  else no committed record
+    SaleService --> Port: null
+  end
+end
+Port --> Processor: recovery result
+note over SaleService, Stock: Recovery does not change stock or create a sale.
+@enduml

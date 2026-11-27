@@ -1,0 +1,77 @@
+
+@startuml
+
+title UC-02 Reserve an item — object interaction
+
+actor Volunteer
+participant ReservationService
+participant StockAvailabilityPort as Stock
+participant ReservationRepository as Repo
+participant ReservationPolicy as Policy
+participant Clock
+entity Reservation
+
+Volunteer -> ReservationService: recordReservation(itemCode, customerRef, conditions)
+
+ReservationService -> ReservationService: validateRequest(itemCode, customerRef, conditions)
+
+alt missing details
+    ReservationService --> Volunteer: Rejected(MissingDetails)
+else valid request
+
+    ReservationService -> Repo: findActiveByItemCode(itemCode)
+    Repo --> ReservationService: active reservation / none
+
+    alt conflicting reservation
+        ReservationService --> Volunteer: Rejected(ConflictingReservation)
+    else no active reservation
+
+        ReservationService -> Clock: now()
+        Clock --> ReservationService: currentDateTime
+
+        ReservationService -> Policy: calculateExpiry(currentDateTime)
+        Policy --> ReservationService: agreedExpiry
+
+        create Reservation
+        ReservationService -> Reservation: create(itemCode, customerRef, conditions, agreedExpiry)
+        Reservation --> ReservationService: Active reservation
+
+        ReservationService -> Repo: save(reservation)
+        
+        alt persistence failed
+            Repo --> ReservationService: PersistenceFailed
+            ReservationService --> Volunteer: Rejected(PersistenceFailed)
+        else reservation saved
+            Repo --> ReservationService: saved(reservationId)
+
+            ReservationService -> Stock: reserveIfAvailable(itemCode)
+
+            alt item reserved successfully
+                Stock --> ReservationService: Reserved
+                ReservationService --> Volunteer: ReservationConfirmed(reservationId, agreedExpiry)
+
+            else item unavailable
+                Stock --> ReservationService: ItemUnavailable
+                ReservationService -> Repo: rollbackReservation(reservation)
+                ReservationService --> Volunteer: Rejected(ItemUnavailable)
+
+            else item not found
+                Stock --> ReservationService: ItemNotFound
+                ReservationService -> Repo: rollbackReservation(reservation)
+                ReservationService --> Volunteer: Rejected(ItemNotFound)
+
+            else stock update failed
+                Stock --> ReservationService: StockUpdateFailed
+                ReservationService -> Repo: rollbackReservation(reservation)
+                ReservationService --> Volunteer: Rejected(StockUpdateFailed)
+
+            else stock service unavailable
+                Stock --> ReservationService: StockServiceUnavailable
+                ReservationService -> Repo: rollbackReservation(reservation)
+                ReservationService --> Volunteer: Rejected(StockServiceUnavailable)
+            end
+        end
+    end
+end
+
+@enduml

@@ -1,0 +1,67 @@
+
+@startuml
+
+title UC-02 Evaluate reservation expiry — object interaction
+
+actor Volunteer
+participant ReservationService
+participant ReservationRepository as Repo
+participant StockAvailabilityPort as Stock
+entity Reservation
+
+Volunteer -> ReservationService: evaluateExpiry(asOf)
+
+ReservationService -> Repo: findAllActive()
+Repo --> ReservationService: activeReservations
+
+loop each active reservation
+
+    ReservationService -> Reservation: getAgreedExpiry()
+    Reservation --> ReservationService: agreedExpiry
+
+    alt asOf >= agreedExpiry
+
+        group Atomic expiry and stock update
+
+            ReservationService -> Stock: releaseIfReserved(itemCode)
+
+            alt no other commitment applies
+                Stock --> ReservationService: Released / Available
+
+                ReservationService -> Reservation: expire()
+                Reservation --> ReservationService: status Expired
+
+                ReservationService -> Repo: update(reservation)
+                Repo --> ReservationService: updated
+
+            else another commitment applies
+                Stock --> ReservationService: NotReleased / Still Reserved
+
+                ReservationService -> Reservation: expire()
+                Reservation --> ReservationService: status Expired
+
+                ReservationService -> Repo: update(reservation)
+                Repo --> ReservationService: updated
+
+            else stock update failed
+                Stock --> ReservationService: StockUpdateFailed
+
+                note over ReservationService, Repo
+                    Do not commit the expiry.
+                    Reservation remains Active.
+                    Stock remains Reserved.
+                end note
+
+            end
+
+        end
+
+    else expiry not reached
+        ReservationService -> ReservationService: keepActive()
+    end
+
+end
+
+ReservationService --> Volunteer: ExpiredReservations(list)
+
+@enduml

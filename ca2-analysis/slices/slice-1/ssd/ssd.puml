@@ -1,0 +1,59 @@
+@startuml
+
+title UC-02 Manage Reservation — System Sequence Diagram
+
+actor "Shop Volunteer" as Volunteer
+participant "LocalCraft Marketplace System" as System
+
+== Record a reservation ==
+
+Volunteer -> System: recordReservation(userId, itemCode, customerRef, conditions)
+
+alt reservation successful
+    System --> Volunteer: ReservationConfirmed(reservationId, agreedExpiry)
+
+else missing or invalid details
+    System --> Volunteer: Rejected(MissingDetails)
+
+else item does not exist
+    System --> Volunteer: Rejected(ItemNotFound)
+
+else active reservation already exists
+    System --> Volunteer: Rejected(ConflictingReservation)
+
+else item exists but is unavailable
+    System --> Volunteer: Rejected(ItemUnavailable)
+
+else reservation persistence fails
+    System --> Volunteer: Rejected(PersistenceFailed)
+
+else stock update fails
+    System --> Volunteer: Rejected(StockUpdateFailed)
+
+else stock service is unavailable
+    System --> Volunteer: Rejected(StockServiceUnavailable)
+end
+
+== Evaluate reservation expiry ==
+
+Volunteer -> System: evaluateExpiry(asOf)
+
+alt expiry evaluation successful
+    System --> Volunteer: ExpiredReservations(list)
+    note over Volunteer, System
+      Expired reservations are reported.
+      Stock is released only when no other
+      commitment applies.
+    end note
+
+else reservation persistence fails
+    System --> Volunteer: Rejected(PersistenceFailed)
+
+else stock update fails
+    System --> Volunteer: Rejected(StockUpdateFailed)
+
+else stock service is unavailable
+    System --> Volunteer: Rejected(StockServiceUnavailable)
+end
+
+@enduml

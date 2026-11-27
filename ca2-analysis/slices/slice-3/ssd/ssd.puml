@@ -1,0 +1,25 @@
+@startuml
+title SSD — UC-10 Reconcile Offline Transactions
+actor "Market Coordinator" as C
+actor Manager as M
+participant ":System" as S
+
+loop for each completed offline form
+  C -> S : enterOfflineTransaction(submissionId, offlineRef, saleDate, recordedBy, lines)
+  S --> C : OfflineOperationResult\n(Success: entry AwaitingReconciliation | ReferredToManager(DuplicateReference)\n | Rejected: InvalidOfflineEntry)
+end
+
+loop for each entry awaiting reconciliation
+  C -> S : reconcile(entryId)
+  S --> C : OfflineOperationResult\n(Success: entry Reconciled(saleRef) | ReferredToManager(reason)\n | Rejected: not awaiting / unauthorised)
+  opt technical failure (SaleRecordingUnavailable, StockServiceUnavailable, PersistenceFailed)
+    S --> C : technical failure — entry still AwaitingReconciliation
+    C -> S : reconcile(entryId)  [retry, same SaleRequest]
+  end
+end
+
+loop for each referred entry
+  M -> S : resolve(entryId, decision: ResolutionDecision, note)
+  S --> M : OfflineOperationResult\n(Success: entry Resolved | Rejected)
+end
+@enduml

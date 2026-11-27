@@ -1,0 +1,70 @@
+@startuml
+title UC-10 reconcile(entryId) — object interaction
+
+actor "Market Coordinator" as C
+participant ":OfflineReconciliationService" as Svc
+participant ":OfflineTransactionRepository" as Repo
+participant "tx:OfflineTransaction" as Tx
+participant ":SaleRecordingPort" as Sales
+participant ":ConflictChecker" as Chk
+participant ":StockAvailabilityPort" as Stock
+
+C -> Svc : reconcile(entryId)
+Svc -> Svc : requireCoordinatorRole()
+Svc -> Repo : findByEntryId(entryId)
+Repo --> Svc : tx
+
+alt tx not found or tx.status != AwaitingReconciliation
+  Svc --> C : OfflineOperationRejected(reason)
+else awaiting reconciliation
+  alt tx.saleRequest is empty (first attempt)
+    Svc -> Svc : build SaleRequest(idempotencyKey = entryId,\nprocessedBy = coordinator, channel = OfflineMarket,\ncustomerRef = null, saleDate = tx.saleDate,\nsourceRef = tx.offlineRef, lines = tx lines)
+    Svc -> Tx : saleRequest = request
+    Svc -> Repo : save(tx)
+  else retry
+    Svc -> Svc : reuse tx.saleRequest
+  end
+
+  Svc -> Sales : findRecordedResult(request)
+  Sales --> Svc : Recorded(saleRef) | Rejected(reason) | null
+
+  alt Recorded(saleRef) — sale already committed
+    Svc -> Tx : markReconciled(saleRef)
+  else Rejected(IdempotencyKeyConflict)
+    Svc -> Tx : refer(SaleRejected, reason)
+  else no previous result
+    Svc -> Chk : check(tx)
+    Chk -> Repo : existsOtherWithRef(tx.offlineRef, entryId)
+    Repo --> Chk : Boolean
+    loop each OfflineLine
+      Chk -> Stock : getStatus(itemCode)
+      Stock --> Chk : StockStatus
+    end
+    Chk --> Svc : ReferralReason | null
+
+    alt reason found (duplicate or conflict)
+      Svc -> Tx : refer(reason, detail)
+    else clean
+      Svc -> Sales : recordSale(request: SaleRequest)
+      Sales --> Svc : Recorded(saleRef) | Rejected(reason)
+      alt Recorded(saleRef)
+        Svc -> Tx : markReconciled(saleRef)
+      else Rejected(reason)
+        Svc -> Tx : refer(SaleRejected, reason)
+      end
+    end
+  end
+
+  Svc -> Repo : save(tx)
+  Svc --> C : OfflineOperationSuccess(tx)
+end
+
+note over Svc, Stock
+  Technical failure from Repo, Sales or Stock
+  (PersistenceFailed, SaleRecordingUnavailable,
+  StockServiceUnavailable): no state change,
+  tx stays AwaitingReconciliation with its stored
+  SaleRequest; retry reuses the same request and key.
+  Processing for the same entryId is serialised.
+end note
+@enduml

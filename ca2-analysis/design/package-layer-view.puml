@@ -1,0 +1,95 @@
+@startuml
+title Local Craft Marketplace — Package / Layer View
+top to bottom direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam componentStyle rectangle
+
+actor "Shop Volunteer" as Volunteer
+actor "Market Coordinator" as Coordinator
+actor "Manager" as Manager
+
+package "System boundary / application operations" as Application {
+  component "ReservationService\nUC-02" as ReservationService
+  component "OfflineReconciliationService\nUC-10" as OfflineService
+  component "SaleService\nUC-01" as SaleService
+  component "OrderFulfilmentService\nUC-04" as OrderService
+}
+
+package "Domain responsibilities" as Domain {
+  component "Reservation\nReservationPolicy" as ReservationDomain
+  component "OfflineTransaction\nOfflineLine / ConflictChecker" as OfflineDomain
+  component "Sale / SaleLine\nProduct / Maker" as SaleDomain
+  component "CustomerOrder / OrderLine" as OrderDomain
+}
+
+package "Shared contracts / persistence boundaries" as Contracts {
+  interface StockAvailabilityPort as Stock
+  interface SaleRecordingPort as Sales
+  interface Clock as Time
+  interface CurrentUser as User <<proposed for UC-04>>
+  component "CustomerOrderRepository" as OrderRepo <<repository>>
+  component "ReservationRepository" as ReservationRepo <<repository>>
+  component "OfflineTransactionRepository" as OfflineRepo <<repository>>
+  component "SaleRepository" as SaleRepo <<repository>>
+  component "ProductCatalogue" as Catalogue <<catalogue>>
+}
+
+package "Provider implementations (not specified)" as Infrastructure {
+  component "Stock provider" as StockProvider <<unspecified>>
+  component "Time provider" as TimeProvider <<unspecified>>
+  component "Persistence / catalogue providers" as Persistence <<unspecified>>
+}
+
+Volunteer --> ReservationService
+Volunteer --> SaleService
+Volunteer --> OrderService
+Coordinator --> OfflineService
+Coordinator --> SaleService
+Manager --> OfflineService
+
+ReservationService --> ReservationDomain
+ReservationService ..> Stock : reserve / release / read
+ReservationService ..> Time
+ReservationService ..> ReservationRepo
+
+OfflineService --> OfflineDomain
+OfflineService ..> OfflineRepo
+OfflineService ..> Time
+OfflineService ..> Sales : submit complete request
+OfflineDomain ..> Stock : conflict checking only
+OfflineDomain ..> OfflineRepo : duplicate check
+
+SaleService --> SaleDomain
+SaleService ..|> Sales
+SaleService ..> Stock : read / sell
+SaleService ..> Time
+SaleService ..> SaleRepo
+SaleService ..> Catalogue
+
+OrderService --> OrderDomain
+OrderService ..> Time
+OrderService ..> User
+OrderService ..> OrderRepo
+
+StockProvider ..|> Stock
+TimeProvider ..|> Time
+Persistence ..> ReservationRepo : supplies storage
+Persistence ..> OfflineRepo : supplies storage
+Persistence ..> SaleRepo : supplies storage
+Persistence ..> Catalogue : supplies storage
+Persistence ..> OrderRepo : supplies storage
+
+note right of OrderDomain
+  UC-04 is in the selected scope.
+  Line changes and derived order status.
+  CurrentUser is a proposed identity collaborator.
+end note
+
+note bottom of Infrastructure
+  Conceptual provider boundaries only.
+  No concrete implementation or
+  transaction mechanism is claimed.
+end note
+
+@enduml

@@ -1,0 +1,9 @@
+@startuml
+title SSD — UC-01 Process a Customer Sale
+
+actor "Shop Volunteer / Market Coordinator" as Processor
+participant "Local Craft Marketplace System" as System
+
+Processor -> System: recordSale(SaleRequest)
+System --> Processor: Recorded(saleRef) / Rejected(reason) / TechnicalFailure
+@enduml
