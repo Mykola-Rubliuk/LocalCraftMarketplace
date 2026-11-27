@@ -13,6 +13,8 @@ Feature: Reserve an item
     And the reservation is linked to customer "CU-001"
     And an agreed expiry date is assigned
     And item "IT-201" becomes reserved
+    And the reservation records the ID of the volunteer who created it
+
 
   Scenario: Reject a reservation for an unavailable item
     Given item "IT-202" is already sold
