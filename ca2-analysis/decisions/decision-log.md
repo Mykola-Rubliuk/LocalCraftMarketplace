@@ -1,59 +1,47 @@
 # Architecture and analysis decision log
 
+This log records design choices represented in the CA2 artefacts, planned work and deferred extensions. Modelled describes design evidence, not implemented code or formal group approval.
+
 | ID | Decision / proposal | Alternatives considered | Rationale | Consequence / status |
 |---|---|---|---|---|
-| D-CA2-01 | Use application services as use-case controllers | Put all logic in entities; use one generic controller | Keeps actor interaction coordination separate from entity invariants | Proposed; group review required |
-| D-CA2-02 | Use explicit result variants for expected refusals | Generic exceptions for all outcomes | Makes business rejection visible in contracts and sequences | Proposed |
-| D-CA2-03 | Use shared StockAvailabilityPort | Each slice defines independent stock semantics | Avoids inconsistent availability rules across reservations, sales and offline reconciliation | Proposed; must be frozen by group |
-| D-CA2-04 | SaleService provides SaleRecordingPort | Slice 3 directly constructs Sale objects | Preserves one authoritative sale validation and recording path | Proposed |
-| D-CA2-05 | Reservation expiry comes from ReservationPolicy | Hard-code three working days in service | CA1 treats duration as uncertain; policy must be confirmed | Proposed; no duration accepted as fact |
-| D-CA2-06 | OrderLine owns independent fulfilment status | Single status on CustomerOrder | Supports partial readiness/collection across makers | Supported by scenario evidence; group ratification required |
-| D-CA2-07 | Offline conflicts do not create a sale | Best-effort posting and manual correction later | Avoids double-selling or duplicate recording | Proposed; Manager resolution process needs confirmation |
-| D-CA2-08 | Slice fakes implement the shared port contracts | Each fake behaves independently | Enables consistent slice tests before integration | Proposed |
-| D-CA2-09 | Store each offline entry with an internal entryId; the offline reference is not the storage key | Use offlineRef as the key | A repeated reference must itself be stored as referred to the Manager (SC-13) | Proposed; Slice 3 |
-| D-CA2-10 | Check duplicate references at entry and at reconciliation | Check only at reconciliation | SC-13 flags the duplicate when the reference is entered again | Proposed; Slice 3 |
-| D-CA2-11 | Check all lines before calling SaleRecordingPort; refer the whole offline transaction if any line conflicts | Record clean lines and refer the rest | Keeps the sale atomic and avoids partial postings | Proposed; Slice 3 |
-| D-CA2-12 | Use entryId as idempotency key for recordSale and submissionId for idempotent entry | No idempotency; rely on status checks only | Retries after a timeout must not create a second sale or a false duplicate (Q-SH-02) | Proposed; needs Slice 4 agreement |
-| D-CA2-13 | Resolve records the Manager's decision and note only; it does not record a sale | Accepted decision posts the sale | SC-15 and BR-05: corrections happen outside the system | Proposed; confirm through Q-08 |
-| D-CA2-14 | Clarify `A-04`: the customer approves offstage; the Shop Volunteer records the decision, which the system does not verify; each `OrderLine` records who made the last change and when | Keep `approvalEvidence`; add a `customerApproved` flag; require Manager approval of each substitution, cancellation and collection; keep a full change history | Evidence cannot be verified in the design; a flag restates a customer's request and adds no information beyond the act of recording; Manager approval would move the Volunteer's work to the Manager; a last-change record gives accountability without a full history (`FR-07`, `R-04`) | Draft, 2026-11-23, Maryna Tarasova; proposed resolution of `Q-03`; test `without approval is rejected` is dropped; limitation: only the last change is attributed; residual risk of `R-04`: a recorded decision is not verified; affects `UC-04` main flow (step 5) and success guarantee, class diagram, sequences and `Q-03`; group review required |
-| D-CA2-15 | Record customer's `decisionReason` as mandatory, chosen from one predefined list of values, shared by substitution and cancellation, that includes `NotGiven`  | Drop `decisionReason` entirely; keep `approvalEvidence`; make `decisionReason` optional (blank allowed)  | Replaces `approvalEvidence`; a decision reason gives analysable data on why `OrderLine` was substituted or cancelled; customer does not always give a reason, so `NotGiven` is a valid value and only a decision with no value chosen is rejected; mandatory with `NotGiven` separates "customer gave no reason" from "not recorded", which a blank cannot; one shared list keeps the model simple | Draft, 2026-11-23, Maryna Tarasova; extension beyond the CA1 baseline; tests `rejected when no reason chosen` and `NotGiven accepted` added; group review required  |
-| D-CA2-16 | Allow the Manager to restore an `OrderLine` to its previous status, one step back, with `revertLineStatus` (a future extension)  | No revert; allow the Manager explicitly to change `OrderLine` status | Restores only the last state the line has already legitimately held; explicit status setter would allow illegal combinations; deferred to keep Slice 2 within CA2 scope | Draft, 2026-11-23, Maryna Tarasova; extension beyond the CA1 baseline; `UC-04` unchanged for now; the extension adds the Manager as a primary actor, `OrderLine` keeps `previousStatus`, the original `decisionReason` is kept and marked as corrected; reverting a closed line (`Collected`, `Cancelled` or `Substituted`) in a `Completed` order reopens the order; a revert overwrites the last-change record (D-CA2-14) with the Manager and the revert time, so the original change's author is no longer shown; limitation: only one step back; tests `rejected for non-Manager` and `rejected when nothing to revert` planned; group review required |
-| D-CA2-17 | Allow the Manager to add, archive and restore values in the `decisionReason` list, except essential ones, which cannot be archived (a future extension); the extension adds an active flag, and new decisions accept only active values, while old `OrderLine`s keep their archived ones; for now the list is predefined and `decisionReason` is modelled as a concept without the flag | Fixed predefined set of `decisionReason` values; free-text `decisionReason`  | Lets the business adjust `decisionReason` values over time; archiving instead of deleting keeps a valid `decisionReason` on old `OrderLine`s; essential values stay untouched; free text is harder to analyse than a predefined list; deferred to keep Slice 2 within CA2 scope | Draft, 2026-11-23, Maryna Tarasova; extension beyond the CA1 baseline; essential values (for example `NotGiven`) are to be defined in the domain model and glossary, and the active flag is deferred to the extension; tests `rejected duplicate reason` and `rejected archiving essential reason` planned; group review required |
-## Shared contract conventions proposed for review
+| D-CA2-01 | Use application services as use-case controllers | Put all logic in entities; use one generic controller | Keeps actor interaction coordination separate from entity invariants | Modelled — integrated class diagram; four application services. |
+| D-CA2-02 | Use explicit result variants for expected refusals | Generic exceptions for all outcomes | Makes business rejection visible in contracts and sequences | Modelled — operation contracts and error catalogue. |
+| D-CA2-03 | Use shared StockAvailabilityPort | Each slice defines independent stock semantics | Avoids inconsistent availability rules across reservations, sales and offline reconciliation | Modelled — shared interface catalogue and integrated class diagram. |
+| D-CA2-04 | SaleService provides SaleRecordingPort | Slice 3 directly constructs Sale objects | Preserves one authoritative sale validation and recording path | Modelled — Slice 4 sale contract and shared interface catalogue. |
+| D-CA2-05 | Reservation expiry comes from ReservationPolicy | Hard-code three working days in service | CA1 leaves the expiry duration open | Modelled — Slice 1 contract; exact expiry policy remains open (Q-01). |
+| D-CA2-06 | OrderLine owns independent fulfilment status | Single status on CustomerOrder | Supports partial readiness/collection across makers | Modelled — Slice 2 CRC, GRASP and state diagram. |
+| D-CA2-07 | Offline conflicts do not create a sale | Best-effort posting and manual correction later | Avoids double-selling or duplicate recording | Modelled — Slice 3 CO-2; detailed operational policy remains open (Q-08). |
+| D-CA2-08 | Require slice fakes to follow shared port contracts | Each fake behaves independently | Enables consistent slice tests before integration | Planned — shared contract test plan; execution not evidenced. |
+| D-CA2-09 | Store each offline entry with an internal entryId; the offline reference is not the storage key | Use offlineRef as the key | A repeated reference must itself be stored as referred to the Manager (SC-13) | Modelled — Slice 3 CO-1. |
+| D-CA2-10 | Check duplicate references at entry and at reconciliation | Check only at reconciliation | SC-13 flags the duplicate when the reference is entered again | Modelled — Slice 3 CO-1 and CO-2. |
+| D-CA2-11 | Check all lines before a new sale attempt; refer the whole offline transaction if any line conflicts | Record clean lines and refer the rest | Keeps the sale atomic and avoids partial postings | Modelled — Slice 3 CO-2; recovery is checked before conflicts on retries. |
+| D-CA2-12 | Use entryId as idempotency key for recordSale and submissionId for idempotent entry | No idempotency; rely on status checks only | Retries after a timeout must not create a second sale or a false duplicate (Q-SH-02) | Modelled — Slice 3 CO-1/CO-2 and Slice 4 OC-4.1/OC-4.2. |
+| D-CA2-13 | Resolve records the Manager's decision and note only; it does not record a sale | Accepted decision posts the sale | SC-15 and BR-05: corrections happen outside the system | Modelled — Slice 3 CO-3; related question Q-08. |
+| D-CA2-14 | Customer approval occurs offstage; the volunteer records the unverified decision and last-change author/time (`A-04`). | `approvalEvidence`; approval flag; Manager approval; full history | Avoids unverifiable evidence and retains basic accountability (`FR-07`, `R-04`). | Modelled in Slice 2 (draft baseline change) — Maryna Tarasova, 2026-11-23; Q-03 and UC-04 affected; approval not verified; only last change retained. |
+| D-CA2-15 | Require a shared predefined `decisionReason` for substitution/cancellation, including `NotGiven`. | No reason; `approvalEvidence`; optional reason | Distinguishes no customer reason from missing data; supports analysis. | Modelled in Slice 2 (draft baseline extension) — Maryna Tarasova, 2026-11-23; missing reason rejected; NotGiven accepted; full list remains open. |
+| D-CA2-16 | Future extension: Manager restores one previous line status via `revertLineStatus`. | No revert; unrestricted status changes | Restores a previously valid state without arbitrary transitions. | Deferred — Maryna Tarasova, 2026-11-23; UC-04 unchanged. Future previousStatus, corrected reason, order reopening and last-change attribution; tests planned. |
+| D-CA2-17 | Future extension: Manager adds, archives and restores reason values; essential values cannot be archived. | Fixed list; free text | Supports updates while preserving historical reasons. | Deferred — Maryna Tarasova, 2026-11-23; current list predefined; future active flag and essential values; tests planned. |
+| D-CA2-18 | Use `CurrentUser.getUserId()` in Slice 2. | Pass `volunteerId` to each operation | Records the signed-in user without adding actor IDs to system operations. | Modelled in Slice 2 (draft) — GRASP and sequence diagrams; shared identity policy remains open. |
 
-- Stock status values: `Available`, `Reserved`, `Sold`, `Unknown`.
-- Sale result: `Recorded(saleRef)` or `Rejected(reason)`.
-- Sale request: stable `idempotencyKey`, processor, channel, optional customer reference, sale date where required, optional source reference and all sale lines.
-- Slice 3 uses `entryId` as idempotency key, `OfflineMarket` as channel, form date as `saleDate` and `offlineRef` as `sourceRef`.
-- Slice 3 reads stock but does not mutate stock or create Sale/SaleLine.
-- Slice 4 is the only provider of SaleRecordingPort and owns sale recording and stock updates.
+## Shared contract conventions
 
-## Agreed shared contract conventions
+The following conventions describe the current design. Individual decision statuses and limitations are recorded above.
 
-- Stock status values: `Available`, `Reserved`, `Sold`, `Unknown`.
-- Sale result: `Recorded(saleRef)` or `Rejected(reason)`.
-- Technical failures are reported separately and do not confirm a sale.
-- Sale request contains a stable `idempotencyKey`, `processedBy`,
-  `channel`, optional `customerRef`, `saleDate` where required,
-  optional `sourceRef` and all sale lines.
-- Slice 3 uses `entryId` as idempotency key, `OfflineMarket`
-  as channel, form date as `saleDate` and `offlineRef` as `sourceRef`.
-- Slice 3 reads stock but does not mutate stock or create Sale/SaleLine.
-- Slice 4 is the only provider of SaleRecordingPort and owns
-  sale recording and stock updates.
-- All four slices use `Clock.now()` for time-dependent operations.
-- Reservation working-day calculations belong to `ReservationPolicy`.
-- Slice 2 maintains independent order-line fulfilment statuses.
-- CustomerOrder status is derived from its order lines.
-- Substitution and cancellation require a predefined `decisionReason`.
-- `NotGiven` is a valid decision reason.
-- Customer approval occurs offstage.
-- Successful order-line changes retain the last-change author and timestamp.
+- Stock states: `Available`, `Reserved`, `Sold`, `Unknown`.
+- Sale outcomes: `Recorded(saleRef)` or `Rejected(reason)`; technical failures are separate.
+- Sale request: stable `idempotencyKey`, `processedBy`, `channel`, optional `customerRef`, `saleDate` where required, optional `sourceRef` and sale lines.
+- Slice 3 uses `entryId` as the idempotency key, `OfflineMarket` as channel, form date as `saleDate` and `offlineRef` as `sourceRef`.
+- Slice 3 reads stock and delegates sale recording to Slice 4, the sole provider of `SaleRecordingPort` responsible for sale recording and stock updates.
+- All slices use `Clock.now()`; `ReservationPolicy` handles working-day calculations.
+- Slice 2 tracks independent line statuses; `CustomerOrder` derives its status from its lines.
+- Substitution and cancellation require a predefined `decisionReason`, including `NotGiven`.
+- Customer approval occurs offstage; successful line changes retain the last-change author and timestamp.
 
 ## Decision status vocabulary
 
+- **Modelled:** represented in the current design artefacts. A draft qualifier identifies an unconfirmed baseline or interface decision.
+- **Planned:** approach documented; execution not evidenced.
+- **Draft / Proposed:** recorded for consideration; not confirmed as accepted.
 - **Accepted:** included in the agreed CA2 design scope.
-- **Deferred:** intentionally excluded from the current scope
-  and retained as a future extension.
+- **Deferred:** outside the current scope; retained as a future extension.
 - **Rejected:** not adopted.
-- **Superseded:** replaced by a later decision.
