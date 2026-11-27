@@ -30,7 +30,7 @@ Each line contains `itemCode`, `quantity`, `soldPrice` and optional `discountAmo
 - A repeated idempotency key is associated with the same request payload.
 
 ### Success postconditions
-- One Sale is recorded with unique `saleRef` and status Completed.
+- One Sale is recorded with unique `saleRef` and status Completed, retaining the supplied `sourceRef` if present.
 - One SaleLine is recorded for each requested line.
 - Each SaleLine retains product/stock item and maker attribution.
 - Each SaleLine stores soldPrice, quantity and any applicable discount.
@@ -52,6 +52,7 @@ Each line contains `itemCode`, `quantity`, `soldPrice` and optional `discountAmo
 The result is `Rejected(reason)`. No Sale/SaleLine or stock change is committed.
 
 ### Idempotency
+- Authorise the caller and compare the key and request payload before checking current stock. Availability and catalogue preconditions apply to new sales, not already recorded identical retries.
 - Same key + same payload: return the original result and do not create a second Sale.
 - Same key + different payload: return `Rejected(IdempotencyKeyConflict)`.
 - Slice 3 uses its `entryId` as the key. An ordinary in-store caller must also provide a stable key.
@@ -61,9 +62,6 @@ A persistence or stock technical failure must not leave partial Sale/SaleLine re
 
 **Integration issue:** `StockAvailabilityPort.sellAllIfAvailable` can make the stock transition atomic for all lines, but this alone does not prove atomicity across stock persistence and `SaleRepository`. The group must agree whether both share a transaction or use a safe prepare/commit/compensation mechanism.
 
-## Shared contract references
+## OC-4.2 `findRecordedResult(request: SaleRequest): SaleRecordingResult?`
 
-- Request, result and shared ports: `design/shared-interface-catalogue.md`.
-- Error definitions: `design/operation-error-catalogue.md`.
-- Required fake/implementation tests: `design/shared-contract-test-plan.md`.
-- Open business rules: Q-06, Q-SH-01, Q-SH-02, Q-02 / Q-SH-04 and Q-SH-06.
+Read-only recovery for Slice 3. The caller must be authorised before a stored result is disclosed. Look up the idempotency record and compare the request fingerprint. An identical key and payload returns the original `Recorded(saleRef)`; an existing key with a different payload returns `Rejected(IdempotencyKeyConflict)`; an absent committed result returns `null`. An unauthorised caller is rejected. A technical lookup failure is reported separately, never as `null`. No sale or stock state is changed.

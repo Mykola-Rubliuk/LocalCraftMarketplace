@@ -92,3 +92,15 @@ Feature: Process a customer sale
     Then the sale stores saleDate "2026-11-14"
     And the system stores the current time separately as recordedAt
     And the item has stock status "Sold"
+
+  Scenario: Recover a previously committed sale without changing stock
+    Given an authorised caller and a sale request with a previously committed result
+    When the caller requests the recorded result using the same key and payload
+    Then the original saleRef is returned
+    And no additional sale or stock change occurs
+
+  Scenario: Recovery lookup fails without reporting an absent result
+    Given an authorised caller and an unavailable sale repository
+    When the caller requests the recorded result
+    Then a technical failure is reported
+    And no sale or stock change occurs

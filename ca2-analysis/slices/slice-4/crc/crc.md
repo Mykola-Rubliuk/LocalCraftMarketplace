@@ -3,8 +3,8 @@
 ## SaleService
 
 **Responsibilities**
-- Implement `SaleRecordingPort.recordSale(SaleRequest)`.
-- Validate request identity, processor authorisation and sale lines using `validateRequestAndIdempotency()`.
+- Implement `SaleRecordingPort.recordSale(SaleRequest)` and read-only `findRecordedResult(request)`.
+- Validate request identity, processor authorisation and sale lines using `validateRequestAndIdempotency(request)`.
 - Enforce idempotency by retrieving and checking previously recorded sale results.
 - Resolve product and maker details through `ProductCatalogue.findItem()`.
 - Check every item's stock status through `StockAvailabilityPort.getStatus()`.
@@ -18,7 +18,7 @@
 ## Sale
 
 **Responsibilities**
-- Store saleRef, processedBy, optional customerRef, channel, saleDate, recordedAt and status.
+- Store saleRef, processedBy, optional customerRef and sourceRef, channel, saleDate, recordedAt and status.
 - Initialise a Sale using `create(request, recordedAt)`.
 - Own and maintain its collection of SaleLines.
 - Add a SaleLine through `addLine(line)`.
@@ -48,8 +48,8 @@
 ## SaleRepository
 
 **Responsibilities**
-- Retrieve an existing sale result through `findResultByIdempotencyKey(key)`.
-- Persist the Sale aggregate and its SaleLines through `persist(sale, idempotencyKey)`.
+- Retrieve an existing sale result through `findByIdempotencyKey(key)`.
+- Persist the Sale aggregate and its SaleLines through `persist(sale, record: IdempotencyRecord)`.
 - Retain the idempotency key and sufficient request information to identify repeated or conflicting requests.
 - Preserve the original recorded result for safe retries.
 - Participate in the atomic consistency boundary between sale persistence and stock updates.
@@ -81,7 +81,7 @@
 ## SaleRecordingPort (shared)
 
 **Responsibilities**
-- Define the shared `recordSale(request: SaleRequest)` operation.
+- Define the shared `recordSale(request: SaleRequest)` and `findRecordedResult(request: SaleRequest)` operations.
 - Provide a consistent sale-recording boundary for in-store and offline sales.
 - Define the expected sale-recording outcomes.
 - Require idempotent and all-or-nothing sale-recording behaviour.
