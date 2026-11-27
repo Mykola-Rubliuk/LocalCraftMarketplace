@@ -66,9 +66,9 @@ Feature: Process a customer sale
     And item "IT-210" remains "Available"
 
   Scenario: Reject a sale by an unauthorised processor
-    Given the user is not authorised to process sales
+    Given the processedBy identifier is not authorised to process sales
     And item "IT-211" has stock status "Available"
-    When the user attempts to record a sale containing item "IT-211"
+    When the processor attempts to record a sale containing item "IT-211"
     Then the result is "Rejected" with reason "UnauthorisedProcessor"
     And no sale is created
     And item "IT-211" remains "Available"
